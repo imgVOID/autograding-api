@@ -1,0 +1,7 @@
+docker~=5.0.2
+fastapi~=0.68.1
+pydantic~=1.8.2
+aiofiles~=0.7.0
+pytest
+python-multipart
+uvicorn
