@@ -1,22 +1,11 @@
 import pytest
 import aiofiles
-import json
 from io import BytesIO
 from os.path import abspath, dirname, join
 from httpx import AsyncClient
-from fastapi.testclient import TestClient
 
 from main import app
-
-client = TestClient(app)
-
-
-async def get_themes_counter():
-    async with aiofiles.open(join(dirname(abspath(__file__)),
-                                  'data', 'test_themes.json'),
-                             mode='r', encoding='utf-8') as f:
-        themes = await f.read()
-        return json.loads(themes)[0].get("count")
+from utilities.testing_scripts import get_simple_code, get_themes_counter
 
 
 @pytest.mark.asyncio
@@ -40,11 +29,10 @@ async def test_task_create():
                              mode='r', encoding='utf-8') as f:
         name = f.name
         description = await f.read()
-        code = BytesIO(b"print('OK')")
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post("/api/tasks", files={
             'task': (None, bytes(description, 'utf-8')),
-            'code': (f'{name}', code),
+            'code': (f'{name}', BytesIO(await get_simple_code())),
         }, params={"test": True})
     assert response.status_code == 201
 
@@ -69,7 +57,7 @@ async def test_task_update():
     count = await get_themes_counter()
     async with AsyncClient(app=app, base_url="http://test") as ac:
         files = {"task": b'{"description": ["string"], "input": [""], "output": ["OK"]}',
-                 "code": b'print("OK")'}
+                 "code": await get_simple_code()}
         response = await ac.put(f"/api/tasks/0/{count}", files=files)
 
     assert response.status_code == 200
