@@ -18,12 +18,12 @@ async def check_user_answer(theme_id, task_id, file: bytes = File(...)):
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail="Task not found") from e
     random_id = random.randint(0, 100000)
-    filename = join(APP_ROOT, '../temp', f'task_{task_id}_{random_id}.py')
+    filename = join(APP_ROOT, 'temp', f'task_{task_id}_{random_id}.py')
     async with aiofiles.open(filename, encoding='utf-8', mode='w') as f:
         await f.write(file.decode('utf-8'))
 
     user_answer = await DockerUtils.docker_setup(theme_id, task_id, filename, random_id)
-    if user_answer == contents:
+    if user_answer.replace('\n', '') == contents.replace('\n', ''):
         return {'answer': contents, 'your_result': user_answer, 'status': 'OK'}
     else:
         return {'answer': contents, 'your_result': user_answer, 'status': 'WRONG'}
