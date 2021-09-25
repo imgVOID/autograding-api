@@ -1,5 +1,1 @@
-import math
-
-r = int(input())
-S = math.pi * r ** 2
-print(round(S, 2))
+print('OK')

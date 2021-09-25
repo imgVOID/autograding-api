@@ -1,15 +1,13 @@
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 from typing import Optional
 import json
 
 
 class Task(BaseModel):
-    id: None = None
     theme_id: int
     description: list[str]
     input: list[str]
     output: list[str]
-    split_values: bool = False
 
     @classmethod
     def __get_validators__(cls):
@@ -21,14 +19,27 @@ class Task(BaseModel):
             return cls(**json.loads(value))
         return value
 
+    class Config:
+        extra = 'allow'
+
 
 class TaskUpdate(BaseModel):
     description: Optional[list[str]] = None
-    input: Optional[str] = None
-    output: Optional[str] = None
+    input: Optional[list[str]] = None
+    output: Optional[list[str]] = None
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_to_json
+
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
 
     class Config:
-        extra = Extra.allow
+        extra = 'allow'
 
 
 class TaskAnswer(BaseModel):

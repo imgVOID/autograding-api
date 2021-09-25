@@ -3,10 +3,14 @@ import docker
 
 
 class DockerUtils:
-    client = docker.from_env()
+    app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        client = docker.from_env()
+    except docker.errors.DockerException as e:
+        print("Docker does not load correctly.\ndocker.errors.DockerException:", e, sep='')
 
-    @classmethod
-    def fix_docker_bug(cls):
+    @staticmethod
+    def fix_docker_bug():
         docker.api.build.process_dockerfile = lambda file, path: ('Dockerfile', file)
 
     @classmethod
@@ -15,8 +19,8 @@ class DockerUtils:
         container = None
         dockerfile = f'''
         FROM python:3.9-alpine
-        COPY temp/task_{task_id}_{random_id}.py /
-        COPY materials/{theme_id}/input/task_{task_id}.txt /
+        COPY {cls.app_root}/temp/task_{task_id}_{random_id}.py /
+        COPY {cls.app_root}/materials/{theme_id}/input/task_{task_id}.txt /
         CMD cat ./task_{task_id}.txt | python -u ./task_{task_id}_{random_id}.py'''
         image = cls.client.images.build(path='.', dockerfile=dockerfile,
                                         nocache=True, rm=True, forcerm=True,
