@@ -1,9 +1,9 @@
-import os
 import docker
+from os.path import dirname, abspath, exists, join
+from os import remove
 
 
 class DockerUtils:
-    app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
         client = docker.from_env()
     except docker.errors.DockerException as e:
@@ -18,9 +18,9 @@ class DockerUtils:
         answer = ""
         container = None
         dockerfile = f'''
-        FROM python:3.9-alpine
-        COPY {cls.app_root}/temp/task_{task_id}_{random_id}.py /
-        COPY {cls.app_root}/materials/{theme_id}/input/task_{task_id}.txt /
+        FROM python:3.9-slim-buster
+        COPY ./temp/task_{task_id}_{random_id}.py /
+        COPY ./materials/{theme_id}/input/task_{task_id}.txt /
         CMD cat ./task_{task_id}.txt | python -u ./task_{task_id}_{random_id}.py'''
         image = cls.client.images.build(path='.', dockerfile=dockerfile,
                                         nocache=True, rm=True, forcerm=True,
@@ -31,10 +31,10 @@ class DockerUtils:
         except docker.errors.ContainerError:
             pass  # TODO: write error message
         finally:
-            if os.path.exists(user_input):
-                os.remove(user_input)
+            if exists(user_input):
+                remove(user_input)
             for line in container.logs(stream=True):
                 answer += line.decode('utf-8').strip()
             cls.client.containers.prune()
-            cls.client.images.remove(image.id)
+            cls.client.images.remove(image.id, force=True)
             return answer
