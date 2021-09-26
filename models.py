@@ -21,6 +21,15 @@ class Task(BaseModel):
 
     class Config:
         extra = 'allow'
+        schema_extra = {
+            "example": {
+                "theme_id": 0,
+                "description": ["Task's essence.",
+                                "Separated by a newline."],
+                "input": ["First input", "2"],
+                "output": ["First output", "2"],
+            }
+        }
 
 
 class TaskUpdate(BaseModel):
@@ -40,8 +49,11 @@ class TaskUpdate(BaseModel):
 
     class Config:
         extra = 'allow'
-
-
-class TaskAnswer(BaseModel):
-    code: str
-    language: str
+        schema_extra = {
+            "example": {
+                "description": ["Task's essence.",
+                                "Separated by a newline."],
+                "input": ["First input", "2"],
+                "output": ["First output", "2"],
+            }
+        }
