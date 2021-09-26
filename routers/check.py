@@ -9,8 +9,8 @@ from utilities.file_scripts import get_filepath
 APP_ROOT = dirname(dirname(abspath(__file__)))
 
 
-@router_check.post("/{theme_id}/{task_id}")
-async def check_user_answer(theme_id, task_id, file: bytes = File(...)):
+@router_check.post("/{theme_id}/{task_id}", status_code=200)
+async def check_user_answer(theme_id, task_id, file: bytes = File(...)) -> dict:
     filename = join(get_filepath("task_output", theme_id, task_id))
     try:
         async with aiofiles.open(filename, mode='r', encoding='utf-8') as f:

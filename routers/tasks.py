@@ -13,14 +13,13 @@ from utilities.file_scripts import get_filepath
 APP_ROOT = dirname(dirname(abspath(__file__)))
 
 
-@router_tasks.get("/")
+@router_tasks.get("/", status_code=200)
 async def read_syllabus():
     return FileResponse(join(APP_ROOT, 'materials', 'themes.json'))
 
 
 @router_tasks.post("/", status_code=201)
-async def create_task(task: Task, test: bool = False,
-                      code: UploadFile = File(...)):
+async def create_task(task: Task, test: bool = False, code: UploadFile = File(...)) -> Task:
     if not test:
         themes_path = join(APP_ROOT, 'materials', 'themes.json')
     else:
@@ -67,7 +66,7 @@ async def create_task(task: Task, test: bool = False,
     return task
 
 
-@router_tasks.get("/{theme_id}/{task_id}")
+@router_tasks.get("/{theme_id}/{task_id}", status_code=200)
 async def read_task(theme_id, task_id) -> str:
     filename = join(APP_ROOT, 'materials', f'{theme_id}',
                     'description', f'task_{task_id}.json')
@@ -83,7 +82,7 @@ async def read_task(theme_id, task_id) -> str:
 @router_tasks.put("/{theme_id}/{task_id}", status_code=200,
                   response_model_exclude_none=True)
 async def update_task(theme_id: int, task_id: int, task: TaskUpdate,
-                      code: UploadFile = File(None)):
+                      code: UploadFile = File(None)) -> TaskUpdate:
     task.theme_id = theme_id
     task.id = task_id
     update_task_encoded = jsonable_encoder(task)
