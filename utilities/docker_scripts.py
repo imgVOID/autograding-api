@@ -4,17 +4,27 @@ from os import remove
 
 
 class DockerUtils:
+    """
+    `DockerUtils` is a collection of utilities for creating and maintaining disposable containers. 
+    Class attribute `client` stores the client Docker application.
+    """
     try:
         client = docker.from_env()
     except docker.errors.DockerException as e:
-        print("Docker does not load correctly.\ndocker.errors.DockerException:", e, sep='')
+        print("Docker won't load correctly. \ndocker.errors.DockerException:", e, sep='')
 
     @staticmethod
     def fix_docker_bug():
+        """
+        `DockerUtils.fix_docker_bug()` staticmethod making it possible to dynamically define dockerfiles with the BytesIO.
+        """
         docker.api.build.process_dockerfile = lambda file, path: ('Dockerfile', file)
 
     @classmethod
     async def docker_setup(cls, theme_id, task_id, user_input, random_id):
+        """
+        `DockerUtils.docker_setup()` classmethod returns the result of executing a file in a container.
+        """
         answer = ""
         container = None
         dockerfile = f'''
