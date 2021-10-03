@@ -1,3 +1,6 @@
+"""
+The `file_scripts` module stores utilities for saving user input files and file pathes. 
+"""
 import random
 import aiofiles
 from os.path import dirname, abspath, join
