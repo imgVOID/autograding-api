@@ -1,3 +1,6 @@
+"""
+The `docker_scripts` module stores utilities for creating and maintaining disposable containers. 
+"""
 import docker
 from os.path import dirname, abspath, exists, join
 from os import remove
