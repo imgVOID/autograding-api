@@ -1,3 +1,6 @@
+"""
+The `utilities` module stores data for formatting metadata in the main.py application file.
+"""
 tags_metadata = [
     {
         "name": "tasks",
