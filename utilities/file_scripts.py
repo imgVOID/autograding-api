@@ -10,7 +10,7 @@ APP_ROOT = dirname(dirname(abspath(__file__)))
 
 def get_filepath(title, theme_id, task_id):
     """
-    `get_filepath` function returns file path 
+    `get_filepath` function returns the path to a file by path name.
     It takes three parameters: 
     1. `title` has four variants: "task_info", "task_input", "task_output", "task_code".
     2. `theme_id` means an id of the theme and the directory name.
@@ -35,7 +35,8 @@ def get_filepath(title, theme_id, task_id):
 
 async def save_user_input(code, theme, task_id):
     """
-    `save_user_input` function returns file name and random number.
+    `save_user_input` function  saves user input on a disk.
+    It returns the name of a file uploaded by the user, and a random number.
     It takes three parameters: 
     1. `code` is the bytes object with the user input untrusted code.
     2. `theme` means an id of the theme and the directory name.
