@@ -6,7 +6,7 @@ tags_metadata = [
     {
         "name": "check",
         "description": "Checking if the user's answer is correct: "
-                       "running the code safely in the Docker container and comparing the result."
+                       "running the code safely in a Docker container and comparing the result."
     },
 ]
 
