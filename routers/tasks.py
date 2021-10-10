@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 from schemas.tasks import Task, TaskUpdate
 from routers import router_tasks
-from utilities.file_scripts import get_filepath
+from utilities.file_scripts import get_filepath, open_json_file
 
 APP_ROOT = dirname(dirname(abspath(__file__)))
 
@@ -25,11 +25,8 @@ async def create_task(task: Task, test: bool = False, code: UploadFile = File(..
     else:
         themes_path = join(APP_ROOT, 'tests', 'data', 'test_themes.json')
 
-        # Open themes info
-    async with aiofiles.open(themes_path,
-                             encoding='utf-8', mode='r') as f:
-        contents = await f.read()
-    themes_json = json.loads(contents)
+    # Open themes info
+    themes_json = await open_json_file(themes_path)
     # Get the new task's id
     task.id = themes_json[task.theme_id].get("count") + 1
     # Save task info
@@ -68,15 +65,13 @@ async def create_task(task: Task, test: bool = False, code: UploadFile = File(..
 
 @router_tasks.get("/{theme_id}/{task_id}", status_code=200)
 async def read_task(theme_id, task_id) -> str:
-    filename = join(APP_ROOT, 'materials', f'{theme_id}',
-                    'description', f'task_{task_id}.json')
+    filename = get_filepath('task_info', theme_id, task_id)
     try:
-        async with aiofiles.open(filename, mode='r', encoding='utf-8') as f:
-            contents = await f.read()
+        contents = await open_json_file(filename)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail="Task not found") from e
     else:
-        return json.loads(contents.encode('utf-8'))
+        return contents
 
 
 @router_tasks.put("/{theme_id}/{task_id}", status_code=200,
@@ -85,10 +80,10 @@ async def update_task(theme_id: int, task_id: int, task: TaskUpdate,
                       code: UploadFile = File(None)) -> TaskUpdate:
     task.theme_id = theme_id
     task.id = task_id
-    update_task_encoded = jsonable_encoder(task)
+    task_update_encoded = jsonable_encoder(task)
 
     # Update task's description
-    if update_task_encoded.get("description"):
+    if task_update_encoded.get("description"):
         # Get task info
         filename = join(get_filepath("task_info", theme_id, task_id))
         try:
@@ -97,27 +92,27 @@ async def update_task(theme_id: int, task_id: int, task: TaskUpdate,
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail="Task not found") from e
         task_description = json.loads(contents)
-        task_description["description"] = update_task_encoded.get("description")
+        task_description["description"] = task_update_encoded.get("description")
         # Save task info
         async with aiofiles.open(filename, mode='w', encoding='utf-8') as f:
             await f.write(json.dumps(task_description, ensure_ascii=False))
 
     # Update task's input values
-    if update_task_encoded.get("input"):
+    if task_update_encoded.get("input"):
         filename = join(get_filepath("task_input", theme_id, task_id))
         try:
             async with aiofiles.open(filename, mode='w', encoding='utf-8') as f:
-                for input_value in update_task_encoded.get("input"):
+                for input_value in task_update_encoded.get("input"):
                     await f.write(f'{input_value}\n')
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail="Task not found") from e
 
     # Update task answer's output values
-    if update_task_encoded.get("output"):
+    if task_update_encoded.get("output"):
         filename = join(get_filepath("task_output", theme_id, task_id))
         try:
             async with aiofiles.open(filename, mode='w', encoding='utf-8') as f:
-                for output_value in update_task_encoded.get("output"):
+                for output_value in task_update_encoded.get("output"):
                     await f.write(f'{output_value}\n')
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail="Task not found") from e
@@ -132,7 +127,7 @@ async def update_task(theme_id: int, task_id: int, task: TaskUpdate,
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail="Task not found") from e
 
-    return update_task_encoded
+    return task_update_encoded
 
 
 @router_tasks.delete("/{theme_id}/{task_id}", status_code=204)
