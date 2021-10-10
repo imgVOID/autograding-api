@@ -56,3 +56,9 @@ async def open_json_file(path):
     async with aiofiles.open(path, encoding='utf-8', mode='r') as f:
         contents = await f.read()
     return json.loads(contents.encode('utf-8'))
+
+
+async def write_file(path, content):
+    async with aiofiles.open(path, mode='w', encoding='utf-8') as f:
+        content = await content
+        await f.write(content.decode('utf-8'))
