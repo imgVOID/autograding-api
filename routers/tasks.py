@@ -6,7 +6,7 @@ from fastapi import (Response, status, HTTPException,
                      File, UploadFile)
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
-from models import Task, TaskUpdate
+from schemas.tasks import Task, TaskUpdate
 from routers import router_tasks
 from utilities.file_scripts import get_filepath
 
