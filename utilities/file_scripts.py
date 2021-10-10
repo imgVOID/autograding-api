@@ -3,6 +3,7 @@ The `file_scripts` module stores utilities for saving user input files and file 
 """
 import random
 import aiofiles
+import json
 from os.path import dirname, abspath, join
 
 APP_ROOT = dirname(dirname(abspath(__file__)))
@@ -35,7 +36,7 @@ def get_filepath(title, theme_id, task_id):
 
 async def save_user_input(code, theme, task_id):
     """
-    `save_user_input` function  saves user input on a disk.
+    `save_user_input` function saves user input on a disk.
     It returns the name of a file uploaded by the user, and a random number.
     It takes three parameters: 
     1. `code` is the bytes object with the user input untrusted code.
@@ -49,3 +50,9 @@ async def save_user_input(code, theme, task_id):
     async with aiofiles.open(filename, encoding='utf-8', mode='w') as f:
         await f.write(code)
     return f.name, random_id
+
+
+async def open_json_file(path):
+    async with aiofiles.open(path, encoding='utf-8', mode='r') as f:
+        contents = await f.read()
+    return json.loads(contents.encode('utf-8'))
