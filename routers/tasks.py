@@ -1,159 +1,174 @@
 import json
 import aiofiles
-from os.path import dirname, abspath, join, exists
+from os.path import dirname, abspath, join
 from os import remove
-from fastapi import (Response, status, HTTPException,
-                     File, UploadFile)
-from fastapi.responses import FileResponse
+from fastapi import Response, status, File, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
-from schemas.tasks import Task, TaskUpdate
+from schemas.tasks import Task, TaskUpdate, TaskCreate, NotFoundMessage
 from routers import router_tasks
-from utilities.file_scripts import get_filepath, open_json_file
+from utilities.file_scripts import FileUtils
 
 APP_ROOT = dirname(dirname(abspath(__file__)))
 
 
-@router_tasks.get("/", status_code=200)
-async def read_syllabus():
+@router_tasks.get("/", status_code=200,
+                  summary="Read syllabus")
+async def read_task_list():
+    """
+    The `list of tasks` endpoint.
+    """
     return FileResponse(join(APP_ROOT, 'materials', 'themes.json'))
 
 
-@router_tasks.post("/", status_code=201)
-async def create_task(task: Task, test: bool = False, code: UploadFile = File(...)) -> Task:
+@router_tasks.get("/{theme_id}/{task_id}",
+                  status_code=200, responses={404: {"model": NotFoundMessage}},
+                  response_model=Task, summary="Read task by ID",
+                  )
+async def read_task(theme_id: int, task_id: int) -> Task or JSONResponse:
+    """The `read task` CRUD endpoint."""
+    try:
+        description = await FileUtils.open_file(
+            FileUtils.get_filepath('task_info', theme_id, task_id)
+        )
+        inputs = await FileUtils.open_file_values(
+            FileUtils.get_filepath('task_input', theme_id, task_id)
+        )
+        outputs = await FileUtils.open_file_values(
+            FileUtils.get_filepath('task_output', theme_id, task_id)
+        )
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"message": "Task not found"})
+    else:
+        return Task(**description, input=list(inputs), output=list(outputs))
+
+
+@router_tasks.post("/", status_code=201,
+                   response_model=Task, summary="Create new task")
+async def create_task(task: TaskCreate, test: bool = False, code: UploadFile = File(...)) -> Task:
+    """The `create task` CRUD endpoint."""
+    # If this is a test mode, the actual data will be protected from changes.
     if not test:
         themes_path = join(APP_ROOT, 'materials', 'themes.json')
     else:
         themes_path = join(APP_ROOT, 'tests', 'data', 'test_themes.json')
-
+    # New task info dictionary
+    task_description = {key: value for key, value in task
+                        if key in ("id", "theme_id", "description")}
     # Open themes info
-    themes_json = await open_json_file(themes_path)
+    themes_json = await FileUtils.open_file(themes_path)
     # Get the new task's id
+    task = Task(**task.dict())
     task.id = themes_json[task.theme_id].get("count") + 1
     # Save task info
-    async with aiofiles.open(get_filepath("task_info", task.theme_id, task.id),
-                             mode='w', encoding='utf-8') as f:
-        task_description = ("id", "theme_id", "description")
-        task_description = {key: value for key, value in task if key in task_description}
-        task_json = json.dumps(task_description, ensure_ascii=False)
-        await f.write(task_json)
-
+    await FileUtils.save_file(
+        path=FileUtils.get_filepath("task_info", task.theme_id, task.id),
+        content=task_description
+    )
     # Save task's input values
-    async with aiofiles.open(get_filepath("task_input", task.theme_id, task.id),
-                             mode='w', encoding='utf-8') as f:
-        for value in task.input:
-            await f.writelines(f'{value}\n')
-
-    # Save task answer's output values
-    async with aiofiles.open(get_filepath("task_output", task.theme_id, task.id),
-                             mode='w', encoding='utf-8') as f:
-        for value in task.output:
-            await f.writelines(f'{value}\n')
-
+    await FileUtils.save_file_values(
+        path=FileUtils.get_filepath("task_input", task.theme_id, task.id),
+        content_sequence=task.input
+    )
+    # Save task code's output values
+    await FileUtils.save_file_values(
+        path=FileUtils.get_filepath("task_output", task.theme_id, task.id),
+        content_sequence=task.output
+    )
     # Save task's code
-    async with aiofiles.open(get_filepath("task_code", task.theme_id, task.id),
-                             mode='w', encoding='utf-8') as f:
-        code = await code.read()
-        await f.write(code.decode('utf-8'))
-
+    await FileUtils.save_file(
+        path=FileUtils.get_filepath("task_code", task.theme_id, task.id),
+        content=await code.read()
+    )
     # Update the theme tasks count
-    async with aiofiles.open(themes_path,
-                             encoding='utf-8', mode='w') as f:
-        themes_json[task.theme_id]["count"] += 1
-        await f.write(json.dumps(themes_json, ensure_ascii=False))
+    themes_json[task.theme_id]["count"] += 1
+    await FileUtils.save_file(themes_path, themes_json)
     return task
 
 
-@router_tasks.get("/{theme_id}/{task_id}", status_code=200)
-async def read_task(theme_id, task_id) -> str:
-    filename = get_filepath('task_info', theme_id, task_id)
-    try:
-        contents = await open_json_file(filename)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail="Task not found") from e
-    else:
-        return contents
-
-
-@router_tasks.put("/{theme_id}/{task_id}", status_code=200,
-                  response_model_exclude_none=True)
+@router_tasks.put("/{theme_id}/{task_id}",
+                  status_code=200, responses={404: {"model": NotFoundMessage}},
+                  response_model=TaskUpdate, response_model_exclude_none=True,
+                  summary="Update task by ID")
 async def update_task(theme_id: int, task_id: int, task: TaskUpdate,
-                      code: UploadFile = File(None)) -> TaskUpdate:
+                      code: UploadFile = File(None)) -> TaskUpdate or JSONResponse:
+    """The `update task` CRUD endpoint."""
     task.theme_id = theme_id
     task.id = task_id
     task_update_encoded = jsonable_encoder(task)
-
     # Update task's description
     if task_update_encoded.get("description"):
         # Get task info
-        filename = join(get_filepath("task_info", theme_id, task_id))
         try:
-            async with aiofiles.open(filename, mode='r', encoding='utf-8') as f:
-                contents = await f.read()
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=404, detail="Task not found") from e
-        task_description = json.loads(contents)
+            task_description = await FileUtils.open_file(
+                FileUtils.get_filepath("task_info", theme_id, task_id)
+            )
+        except FileNotFoundError:
+            return JSONResponse(status_code=404, content={"message": "Task not found"})
         task_description["description"] = task_update_encoded.get("description")
         # Save task info
-        async with aiofiles.open(filename, mode='w', encoding='utf-8') as f:
-            await f.write(json.dumps(task_description, ensure_ascii=False))
-
+        await FileUtils.save_file(
+            path=FileUtils.get_filepath("task_info", task.theme_id, task.id),
+            content=task_description
+        )
     # Update task's input values
     if task_update_encoded.get("input"):
-        filename = join(get_filepath("task_input", theme_id, task_id))
         try:
-            async with aiofiles.open(filename, mode='w', encoding='utf-8') as f:
-                for input_value in task_update_encoded.get("input"):
-                    await f.write(f'{input_value}\n')
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=404, detail="Task not found") from e
-
+            await FileUtils.save_file_values(
+                path=FileUtils.get_filepath("task_input", theme_id, task.id),
+                content_sequence=task_update_encoded.get("input")
+            )
+        except FileNotFoundError:
+            return JSONResponse(status_code=404, content={"message": "Task not found"})
     # Update task answer's output values
     if task_update_encoded.get("output"):
-        filename = join(get_filepath("task_output", theme_id, task_id))
         try:
-            async with aiofiles.open(filename, mode='w', encoding='utf-8') as f:
-                for output_value in task_update_encoded.get("output"):
-                    await f.write(f'{output_value}\n')
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=404, detail="Task not found") from e
-
+            await FileUtils.save_file_values(
+                path=FileUtils.get_filepath("task_output", theme_id, task.id),
+                content_sequence=task_update_encoded.get("output")
+            )
+        except FileNotFoundError:
+            return JSONResponse(status_code=404, content={"message": "Task not found"})
     # Update task's code file
     if code:
-        filename = join(get_filepath("task_code", theme_id, task_id))
         try:
-            async with aiofiles.open(filename, mode='w', encoding='utf-8') as f:
-                code = await code.read()
-                await f.write(code.decode('utf-8'))
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=404, detail="Task not found") from e
-
+            await FileUtils.save_file(
+                path=FileUtils.get_filepath("task_code", theme_id, task.id),
+                content=await code.read()
+            )
+        except FileNotFoundError:
+            return JSONResponse(status_code=404, content={"message": "Task not found"})
     return task_update_encoded
 
 
-@router_tasks.delete("/{theme_id}/{task_id}", status_code=204)
-async def delete_task(task_id: int, theme_id: int, test: bool = False) -> Response:
+@router_tasks.delete("/{theme_id}/{task_id}",
+                     status_code=204, responses={404: {"model": NotFoundMessage}},
+                     summary="Delete task by ID")
+async def delete_task(task_id: int, theme_id: int, test: bool = False) -> Response or JSONResponse:
+    """The `delete task` CRUD endpoint."""
     if not test:
         themes_path = join(APP_ROOT, 'materials', 'themes.json')
     else:
         themes_path = join(APP_ROOT, 'tests', 'data', 'test_themes.json')
 
     filesystem = {
-        "task_info": get_filepath("task_info", theme_id, task_id),
-        "task_input": get_filepath("task_input", theme_id, task_id),
-        "task_output": get_filepath("task_output", theme_id, task_id),
-        "task_code": get_filepath("task_code", theme_id, task_id),
+        "task_info": FileUtils.get_filepath("task_info", theme_id, task_id),
+        "task_input": FileUtils.get_filepath("task_input", theme_id, task_id),
+        "task_output": FileUtils.get_filepath("task_output", theme_id, task_id),
+        "task_code": FileUtils.get_filepath("task_code", theme_id, task_id),
     }
     for filepath in filesystem:
-        if exists(filesystem.get(filepath)):
+        try:
             remove(filesystem.get(filepath))
+        except FileNotFoundError:
+            return JSONResponse(status_code=404, content={"message": "Task not found"})
+
     # Open themes info
     async with aiofiles.open(themes_path,
                              encoding='utf-8', mode='r') as f:
         contents = await f.read()
     themes_json = json.loads(contents)
     # Update the theme tasks count
-    async with aiofiles.open(themes_path,
-                             encoding='utf-8', mode='w') as f:
-        themes_json[theme_id]["count"] -= 1
-        await f.write(json.dumps(themes_json, ensure_ascii=False))
+    themes_json[theme_id]["count"] -= 1
+    await FileUtils.save_file(themes_path, themes_json)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
