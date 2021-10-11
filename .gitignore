@@ -2,3 +2,4 @@ venv
 .idea
 temp
 .pytest_cache
+tests/.pytest_cache
