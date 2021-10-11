@@ -17,7 +17,7 @@ app_metadata_description = """
 ### 🚀 Fast and asynchronous automatic assignments grading API:\n
 1. *Based on the FastAPI and Python Docker SDK.*\n
 2. *Separated one-time Docker containers for the user input check.*\n
-3. *Totally RESTful (CRUD) API for use with a custom frontend.*\n
+3. *Totally RESTful (CRUD) API for the use with a custom frontend.*\n
 * **Tasks**: CRUD assignments management.
 * **Check**: user input validation by the safely run in a disposable Docker container.
 """
