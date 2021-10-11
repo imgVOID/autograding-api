@@ -2,13 +2,12 @@
 The `docker_scripts` module stores utilities for creating and maintaining disposable containers. 
 """
 import docker
-from os.path import dirname, abspath, exists, join
-from os import remove
+from pathlib import Path
 
 
 class DockerUtils:
     """
-    `DockerUtils` is a collection of utilities for creating and maintaining disposable containers. 
+    `DockerUtils` is a collection of utilities for creating and maintaining disposable containers.
     Class attribute `client` stores the client Docker application.
     """
     try:
@@ -32,8 +31,8 @@ class DockerUtils:
         container = None
         dockerfile = f'''
         FROM python:3.9-slim-buster
-        COPY ./temp/task_{task_id}_{random_id}.py /
-        COPY ./materials/{theme_id}/input/task_{task_id}.txt /
+        COPY {Path().parent}/temp/task_{task_id}_{random_id}.py /
+        COPY {Path().parent}/materials/{theme_id}/input/task_{task_id}.txt /
         CMD cat ./task_{task_id}.txt | python -u ./task_{task_id}_{random_id}.py'''
         image = cls.client.images.build(path='.', dockerfile=dockerfile,
                                         nocache=True, rm=True, forcerm=True,
@@ -44,8 +43,8 @@ class DockerUtils:
         except docker.errors.ContainerError:
             pass  # TODO: write error message
         finally:
-            if exists(user_input):
-                remove(user_input)
+            if Path(user_input).is_file():
+                Path(user_input).unlink()
             for line in container.logs(stream=True):
                 answer += line.decode('utf-8').strip()
             cls.client.containers.prune()
