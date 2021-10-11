@@ -8,8 +8,6 @@ from utilities.file_scripts import FileUtils
 from schemas.check import CheckResult
 from schemas.tasks import NotFoundMessage
 
-APP_ROOT = dirname(dirname(abspath(__file__)))
-
 
 @router_check.post("/{theme_id}/{task_id}",
                    status_code=200, responses={404: {"model": NotFoundMessage}},
