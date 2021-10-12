@@ -10,7 +10,7 @@ async def test_check_answer():
         response = await ac.post(f"api/check/0/0", files={
             'file': await get_simple_code(),
         })
-    # There is some path problems, test success case with the Swagger please
+    # There are some path problems, test success case with the Swagger please
     assert response.status_code == 404
     assert response.json() == {'message': 'Task not found'}
 

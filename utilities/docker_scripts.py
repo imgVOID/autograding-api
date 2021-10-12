@@ -3,6 +3,7 @@ The `docker_scripts` module stores utilities for creating and maintaining dispos
 """
 import docker
 from pathlib import Path
+import os
 
 
 class DockerUtils:
