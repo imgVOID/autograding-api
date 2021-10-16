@@ -8,7 +8,7 @@ from utilities.app_metadata import tags_metadata, app_metadata_description
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 DockerUtils.fix_docker_bug()
 
-app = FastAPI(title='Autograde-API',
+app = FastAPI(title='Autograding-API',
               description=app_metadata_description,
               version='0.0.1',
               contact={
