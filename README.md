@@ -1,4 +1,4 @@
-# Autograde-API
+# Autograding API
 🚀 Fast and asynchronous API for **automated grading of code assignments:**
 1. *Based on the FastAPI and Python Docker SDK.*
 2. *Separated one-time Docker containers for the user input check.*
