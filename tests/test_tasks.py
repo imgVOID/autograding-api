@@ -32,7 +32,7 @@ async def test_task_create_not_found_theme():
         name = f.name
         description = await f.read()
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.post("/api/tasks", files={
+        response = await ac.post("/api/tasks/999", files={
             'task': (None, bytes(description, 'utf-8')),
             'code': (f'{name}', BytesIO(await get_simple_code())),
         })
@@ -63,7 +63,7 @@ async def test_task_create():
         description = await f.read()
         print(description)
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.post("/api/tasks", files={
+        response = await ac.post("/api/tasks/0", files={
             'task': (None, bytes(description, 'utf-8')),
             'code': (f'{name}', BytesIO(await get_simple_code())),
         })

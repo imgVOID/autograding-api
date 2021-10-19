@@ -35,40 +35,42 @@ async def read_task(theme_id: int, task_id: int) -> Task or JSONResponse:
 
 
 # TODO: create parameter theme_id
-@router_tasks.post("/", status_code=201,
+@router_tasks.post("/{theme_id}", status_code=201,
                    response_model=Task, summary="Create new task")
-async def create_task(task: TaskCreate, code: UploadFile = File(...)) -> Task or JSONResponse:
+async def create_task(task: TaskCreate, theme_id: int, code: UploadFile = File(...)) -> Task or JSONResponse:
     """The `create task` CRUD endpoint."""
     # If this is a test mode, the actual data will be protected from changes.
     try:
-        themes_json = await FileUtils.open_file('theme_index', theme_id=task.theme_id)
+        themes_json = await FileUtils.open_file('theme_index', theme_id=theme_id)
     except IndexError:
         return JSONResponse(status_code=404, content={"message": "Theme not found"})
+    # Get ID
+    task_id = themes_json[theme_id].get("count") + 1
     # Create new task
     task = Task(
-        id=themes_json[task.theme_id].get("count") + 1, **task.dict()
+        id=task_id, theme_id=theme_id, **task.dict()
     )
     # New task's info dictionary
     task_description = {key: value for key, value in task
                         if key in ("id", "theme_id", "title", "description")}
     # Save task info
     await FileUtils.save_file(
-        'task_info', content=task_description, theme_id=task.theme_id, task_id=task.id
+        'task_info', content=task_description, theme_id=theme_id, task_id=task.id
     )
     # Save task's input values
     await FileUtils.save_file_values(
-        "task_input", content_sequence=task.input, theme_id=task.theme_id, task_id=task.id
+        "task_input", content_sequence=task.input, theme_id=theme_id, task_id=task.id
     )
     # Save task code's output values
     await FileUtils.save_file_values(
-        "task_output", content_sequence=task.output, theme_id=task.theme_id, task_id=task.id
+        "task_output", content_sequence=task.output, theme_id=theme_id, task_id=task.id
     )
     # Save task's code
     await FileUtils.save_file(
-        "task_code", content=await code.read(), theme_id=task.theme_id, task_id=task.id
+        "task_code", content=await code.read(), theme_id=theme_id, task_id=task.id
     )
     # Update the theme tasks count
-    themes_json[task.theme_id]["count"] += 1
+    themes_json[theme_id]["count"] = task_id
     await FileUtils.save_file('theme_index', content=themes_json)
     return task
 

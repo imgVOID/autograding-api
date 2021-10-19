@@ -31,7 +31,6 @@ class Task(BaseModel):
 
 
 class TaskCreate(BaseModel):
-    theme_id: int
     title: str
     description: list[str]
     input: list[str]
