@@ -5,14 +5,23 @@ from utilities.test_scripts import get_simple_code
 
 
 @pytest.mark.asyncio
-async def test_check_not_found():
+async def test_check_theme_not_found():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post(f"api/check/999/999", files={
             'file': await get_simple_code()
         })
     assert response.status_code == 404
-    assert response.json() == {'message': 'Task not found'}
+    assert response.json() == {'message': 'Theme not found'}
 
+
+@pytest.mark.asyncio
+async def test_check_task_not_found():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.post(f"api/check/0/999", files={
+            'file': await get_simple_code()
+        })
+    assert response.status_code == 404
+    assert response.json() == {'message': 'Task not found'}
 
 @pytest.mark.asyncio
 async def test_check_answer_success():

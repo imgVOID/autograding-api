@@ -1,6 +1,7 @@
-import pytest
-from os.path import abspath, dirname, join
 from io import BytesIO
+from os.path import abspath, dirname, join
+
+import pytest
 from aiofiles import open
 from httpx import AsyncClient
 
@@ -8,6 +9,34 @@ from main import app
 from utilities.test_scripts import get_simple_code
 
 number = None
+
+
+@pytest.mark.asyncio
+async def test_task_read_not_found_task():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.get(f"/api/tasks/0/999")
+    assert response.json()["message"] == "Task not found"
+
+
+@pytest.mark.asyncio
+async def test_task_read_not_found_theme():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.get(f"/api/tasks/999/999")
+    assert response.json()["message"] == "Theme not found"
+
+
+@pytest.mark.asyncio
+async def test_task_create_not_found_theme():
+    async with open(join(dirname(abspath(__file__)), 'data', 'new_task_fail.json'),
+                    mode='r', encoding='utf-8') as f:
+        name = f.name
+        description = await f.read()
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.post("/api/tasks", files={
+            'task': (None, bytes(description, 'utf-8')),
+            'code': (f'{name}', BytesIO(await get_simple_code())),
+        })
+    assert response.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -37,7 +66,7 @@ async def test_task_create():
         response = await ac.post("/api/tasks", files={
             'task': (None, bytes(description, 'utf-8')),
             'code': (f'{name}', BytesIO(await get_simple_code())),
-        }, params={"test": True})
+        })
     assert response.status_code == 201
 
 
