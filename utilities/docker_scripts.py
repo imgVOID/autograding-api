@@ -20,7 +20,8 @@ class DockerUtils:
     @staticmethod
     def fix_docker_bug():
         """
-        `DockerUtils.fix_docker_bug()` staticmethod making it possible to dynamically define dockerfiles with the BytesIO.
+        `DockerUtils.fix_docker_bug()` staticmethod making it possible
+        to dynamically define dockerfiles with the BytesIO.
         """
         build.process_dockerfile = lambda file, path: ('Dockerfile', file)
 
