@@ -28,11 +28,11 @@ async def test_task_list():
 
 @pytest.mark.asyncio
 async def test_task_create():
-    async with open(join(dirname(abspath(__file__)),
-                                  'data', 'new_task.json'),
-                             mode='r', encoding='utf-8') as f:
+    async with open(join(dirname(abspath(__file__)), 'data', 'new_task.json'),
+                    mode='r', encoding='utf-8') as f:
         name = f.name
         description = await f.read()
+        print(description)
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post("/api/tasks", files={
             'task': (None, bytes(description, 'utf-8')),
@@ -57,7 +57,8 @@ async def test_task_read():
 @pytest.mark.asyncio
 async def test_task_update():
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        files = {"task": b'{"description": ["string"], "input": [""], "output": ["OK"]}',
+        files = {"task": b'{"title": "string", "description": ["string"], '
+                         b'"input": [""], "output": ["OK"]}',
                  "code": await get_simple_code()}
         response = await ac.put(f"/api/tasks/0/{number}", files=files)
 

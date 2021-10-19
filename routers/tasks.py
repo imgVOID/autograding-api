@@ -40,7 +40,7 @@ async def create_task(task: TaskCreate, code: UploadFile = File(...)) -> Task:
     themes_json = await FileUtils.open_file('theme_index')
     # New task info dictionary
     task_description = {key: value for key, value in task
-                        if key in ("id", "theme_id", "description")}
+                        if key in ("id", "theme_id", "title", "description")}
     # Get the new task's id
     task.id = themes_json[task.theme_id].get("count") + 1
     task = Task(**task.dict())

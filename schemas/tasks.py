@@ -10,6 +10,7 @@ class NotFoundMessage(BaseModel):
 class Task(BaseModel):
     id: int
     theme_id: int
+    title: str
     description: list[str]
     input: list[str]
     output: list[str]
@@ -20,6 +21,7 @@ class Task(BaseModel):
             "example": {
                 "id": 0,
                 "theme_id": 0,
+                "title": "string",
                 "description": ["Task's essence.",
                                 "Separated by a newline."],
                 "input": ["First input", "2"],
@@ -30,6 +32,7 @@ class Task(BaseModel):
 
 class TaskCreate(BaseModel):
     theme_id: int
+    title: str
     description: list[str]
     input: list[str]
     output: list[str]
@@ -49,6 +52,7 @@ class TaskCreate(BaseModel):
         schema_extra = {
             "example": {
                 "theme_id": 0,
+                "title": "string",
                 "description": ["Task's essence.",
                                 "Separated by a newline."],
                 "input": ["First input", "2"],
@@ -58,6 +62,7 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
+    title: str
     description: Optional[list[str]] = None
     input: Optional[list[str]] = None
     output: Optional[list[str]] = None
@@ -76,6 +81,7 @@ class TaskUpdate(BaseModel):
         extra = 'allow'
         schema_extra = {
             "example": {
+                "title": "string",
                 "description": ["If you want to change only the code",
                                 "please send an empty dict."],
                 "input": ["First input", "2"],

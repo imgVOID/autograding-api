@@ -1,7 +1,8 @@
 {
+  "id": 1,
   "theme_id": 0,
+  "title": "string",
   "description": [
     "string"
-  ],
-  "id": 1
+  ]
 }
