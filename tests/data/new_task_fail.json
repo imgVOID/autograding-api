@@ -1,0 +1,16 @@
+{
+  "id": 0,
+  "theme_id": 999,
+  "title": "string",
+  "description": [
+    "string"
+  ],
+  "input": [
+    ""
+  ],
+  "output": [
+    "OK",
+    "OK",
+    "OK"
+  ]
+}

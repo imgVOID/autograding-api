@@ -1,10 +1,11 @@
 """
 The `docker_scripts` module stores utilities for creating and maintaining disposable containers. 
 """
-from pathlib import Path
+from os import remove
+from os.path import isfile
 from docker import from_env
 from docker.api import build
-from docker.errors import DockerException, ContainerError
+from docker.errors import DockerException, ContainerError, NotFound, ImageNotFound, APIError, BuildError
 
 
 class DockerUtils:
@@ -15,7 +16,7 @@ class DockerUtils:
     try:
         client = from_env()
     except DockerException as e:
-        print("Docker won't load correctly. \ndocker.errors.DockerException:", e, sep='')
+        print("Error accessing the docker API. Is the Docker running?", e, sep="\n")
 
     @staticmethod
     def fix_docker_bug():
@@ -26,30 +27,47 @@ class DockerUtils:
         build.process_dockerfile = lambda file, path: ('Dockerfile', file)
 
     @classmethod
-    async def docker_setup(cls, theme_name, task_id, user_input, random_id, extension):
+    async def docker_setup(cls: 'DockerUtils', theme_name: str, theme_id: int,
+                           task_id: int, random_id: int, extension: str):
         """
         `DockerUtils.docker_setup()` class method returns the result of executing a file in a container.
         """
         answer = ""
-        container = None
+        user_input_name = f"task_{theme_id}_{task_id}_{random_id}.{extension}"
+        user_input_path = f"./temp/{user_input_name}"
         dockerfile = f'''
-            FROM python:3.8-alpine
-            ADD {Path().parent}/temp/task_{task_id}_{random_id}.{extension} /
-            ADD {Path().parent}/materials/{theme_name}/input/task_{task_id}.txt /
-            CMD cat ./task_{task_id}.txt | python -u ./task_{task_id}_{random_id}.{extension}
+            FROM python:3.9-alpine
+            ADD {user_input_path} /
+            ADD ./materials/{theme_name}/input/task_{task_id}.txt /
+            CMD cat ./task_{task_id}.txt | python -u ./{user_input_name}
             '''
-        image = cls.client.images.build(path='.', dockerfile=dockerfile,
-                                        nocache=True, rm=True, forcerm=True,
-                                        tag=f'task_{theme_name}_{task_id}_{random_id}')[0]
         try:
-            container = cls.client.containers.run(image, detach=True, auto_remove=True,
-                                                  name=f'task_{theme_name}_{task_id}_{random_id}')
-        except ContainerError:
-            pass  # TODO: write error message
+            image = cls.client.images.build(
+                path='.', dockerfile=dockerfile, nocache=True, rm=True,
+                forcerm=True, tag=f'task_{theme_name}_{task_id}_{random_id}'
+            )[0]
+        except BuildError as e:
+            print("Failed to build the Docker image.", e)
+            answer = None
+        else:
+            try:
+                container = cls.client.containers.run(
+                    image, detach=True, auto_remove=True,
+                    name=f'task_{theme_name}_{task_id}_{random_id}'
+                )
+            except ContainerError as e:
+                print("Failed to run container:", e)
+            except ImageNotFound as e:
+                print("Failed to find image:", e)
+            except NotFound as e:
+                print("File not found in the container:", e)
+            except APIError as e:
+                print("Unhandled error:", e)
+            else:
+                for line in container.logs(stream=True):
+                    answer += line.decode('utf-8').strip()
+            finally:
+                cls.client.images.remove(image.id, force=True)
         finally:
-            if Path(user_input).is_file():
-                Path(user_input).unlink()
-            for line in container.logs(stream=True):
-                answer += line.decode('utf-8').strip()
-            cls.client.images.remove(image.id, force=True)
+            remove(user_input_path) if isfile(user_input_path) else None
             return answer

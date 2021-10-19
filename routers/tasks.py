@@ -28,22 +28,29 @@ async def read_task(theme_id: int, task_id: int) -> Task or JSONResponse:
         outputs = await FileUtils.open_file_values('task_output', theme_id, task_id)
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"message": "Task not found"})
+    except IndexError:
+        return JSONResponse(status_code=404, content={"message": "Theme not found"})
     else:
         return Task(**description, input=list(inputs), output=list(outputs))
 
 
+# TODO: create parameter theme_id
 @router_tasks.post("/", status_code=201,
                    response_model=Task, summary="Create new task")
-async def create_task(task: TaskCreate, code: UploadFile = File(...)) -> Task:
+async def create_task(task: TaskCreate, code: UploadFile = File(...)) -> Task or JSONResponse:
     """The `create task` CRUD endpoint."""
     # If this is a test mode, the actual data will be protected from changes.
-    themes_json = await FileUtils.open_file('theme_index')
-    # New task info dictionary
+    try:
+        themes_json = await FileUtils.open_file('theme_index', theme_id=task.theme_id)
+    except IndexError:
+        return JSONResponse(status_code=404, content={"message": "Theme not found"})
+    # Create new task
+    task = Task(
+        id=themes_json[task.theme_id].get("count") + 1, **task.dict()
+    )
+    # New task's info dictionary
     task_description = {key: value for key, value in task
                         if key in ("id", "theme_id", "title", "description")}
-    # Get the new task's id
-    task.id = themes_json[task.theme_id].get("count") + 1
-    task = Task(**task.dict())
     # Save task info
     await FileUtils.save_file(
         'task_info', content=task_description, theme_id=task.theme_id, task_id=task.id

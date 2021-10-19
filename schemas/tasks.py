@@ -48,7 +48,6 @@ class TaskCreate(BaseModel):
         return value
 
     class Config:
-        extra = 'allow'
         schema_extra = {
             "example": {
                 "theme_id": 0,
