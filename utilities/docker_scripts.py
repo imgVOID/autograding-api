@@ -32,7 +32,7 @@ class DockerUtils:
         answer = ""
         container = None
         dockerfile = f'''
-            FROM python:3.9-slim-buster
+            FROM python:3.8-alpine
             ADD {Path().parent}/temp/task_{task_id}_{random_id}.{extension} /
             ADD {Path().parent}/materials/{theme_name}/input/task_{task_id}.txt /
             CMD cat ./task_{task_id}.txt | python -u ./task_{task_id}_{random_id}.{extension}
@@ -41,7 +41,7 @@ class DockerUtils:
                                         nocache=True, rm=True, forcerm=True,
                                         tag=f'task_{theme_name}_{task_id}_{random_id}')[0]
         try:
-            container = cls.client.containers.run(image, detach=True, remove=True,
+            container = cls.client.containers.run(image, detach=True, auto_remove=True,
                                                   name=f'task_{theme_name}_{task_id}_{random_id}')
         except ContainerError:
             pass  # TODO: write error message
