@@ -1,10 +1,8 @@
 import pytest
-from io import BytesIO
 from os.path import abspath, dirname, join
 from aiofiles import open
 from httpx import AsyncClient
 from main import app
-from utilities.test_scripts import get_simple_code
 
 tasks_count = None
 
@@ -18,7 +16,7 @@ async def test_task_create():
     async with AsyncClient(app=app, base_url="https://") as ac:
         response = await ac.post("/api/tasks/0", files={
             'task': (None, bytes(description, 'utf-8')),
-            'code': (f'{name}', BytesIO(await get_simple_code())),
+            'code': (f'{name}', b'print("OK")\nprint("OK")\nprint("OK")\n'),
         })
     assert response.status_code == 201
     assert response.json().get("title") == 'string'
@@ -45,7 +43,7 @@ async def test_task_update():
     async with AsyncClient(app=app, base_url="https://") as ac:
         files = {"task": (None, b'{"title": "", "description": ["test"], '
                                 b'"input": [], "output": []}'),
-                 "code": await get_simple_code()}
+                 "code": b'print("OK")\nprint("OK")\nprint("OK")\n'}
         response = await ac.put(f"/api/tasks/0/{tasks_count}", files=files)
     content = response.json()
 
@@ -68,10 +66,10 @@ async def test_task_delete():
 @pytest.mark.asyncio
 async def test_task_read_not_found():
     async with AsyncClient(app=app, base_url="https://") as ac:
-        response_not_found_task = await ac.get(f"/api/tasks/0/999")
+        response_not_found_task = await ac.get(f"/api/tasks/0/9999")
 
     async with AsyncClient(app=app, base_url="https://") as ac:
-        response_not_found_theme = await ac.get(f"/api/tasks/999/999")
+        response_not_found_theme = await ac.get(f"/api/tasks/9999/9999")
 
     assert response_not_found_task.status_code == 404
     assert response_not_found_theme.status_code == 404
@@ -86,9 +84,9 @@ async def test_task_create_not_found():
         name = f.name
         description = await f.read()
     async with AsyncClient(app=app, base_url="https://") as ac:
-        response_not_found_theme = await ac.post("/api/tasks/999", files={
+        response_not_found_theme = await ac.post("/api/tasks/9999", files={
             'task': (None, bytes(description, 'utf-8')),
-            'code': (f'{name}', BytesIO(await get_simple_code())),
+            'code': (f'{name}', b'print("OK")\nprint("OK")\nprint("OK")\n'),
         })
     assert response_not_found_theme.status_code == 404
     assert response_not_found_theme.json()["message"] == "Theme not found"
@@ -97,21 +95,33 @@ async def test_task_create_not_found():
 @pytest.mark.asyncio
 async def test_task_update_not_found():
     async with AsyncClient(app=app, base_url="https://") as ac:
-        files = {"task": (None, b'{"title": "", "description": ["test"], '
+        files = {"task": (None, b'{"title": "", "description": ["string"], '
                                 b'"input": [], "output": []}'),
-                 "code": await get_simple_code()}
-        response_not_found_task = await ac.put(f"/api/tasks/0/999", files=files)
+                 "code": b''}
+        response_not_found_task = await ac.put(f"/api/tasks/0/9999", files=files)
 
     async with AsyncClient(app=app, base_url="https://") as ac:
-        files = {"task": (None, b'{"title": "", "description": ["test"], '
+        files = {"task": (None, b'{"title": "", "description": ["string"], '
                                 b'"input": [], "output": []}'),
-                 "code": await get_simple_code()}
-        response_not_found_theme = await ac.put(f"/api/tasks/999/999", files=files)
+                 "code": b''}
+        response_not_found_theme = await ac.put(f"/api/tasks/9999/9999", files=files)
 
     assert response_not_found_task.status_code == 404
     assert response_not_found_theme.status_code == 404
     assert response_not_found_task.json()["message"] == "Task not found"
     assert response_not_found_theme.json()["message"] == "Theme not found"
+
+
+@pytest.mark.asyncio
+async def test_task_update_empty_request():
+    async with AsyncClient(app=app, base_url="https://") as ac:
+        files = {"task": (None, b'{"title": "", "description": [], '
+                                b'"input": [], "output": []}'),
+                 "code": b''}
+        response_not_found_task = await ac.put(f"/api/tasks/0/999", files=files)
+
+    assert response_not_found_task.status_code == 422
+    assert response_not_found_task.json()["message"] == "The request was empty"
 
 
 @pytest.mark.asyncio

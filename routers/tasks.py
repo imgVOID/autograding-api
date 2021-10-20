@@ -94,9 +94,16 @@ async def update_task(
     task.theme_id = theme_id
     task.id = task_id
     task_update = jsonable_encoder(task)
-    new_task_info = (task_update.get("title"), task_update.get("description"))
+    new_task_info = (
+        task_update.get("title"), task_update.get("description"),
+        task_update.get("input"), task_update.get("output"),
+        await code.read()
+    )
+    # Check if there was an empty request
+    if not any(new_task_info):
+        return JSONResponse(status_code=422, content={"message": "The request was empty"})
     # Update task's description
-    if any(new_task_info):
+    if any(new_task_info[0:2]):
         try:
             # Get task info
             task_info = await FileUtils.open_file(
@@ -114,7 +121,7 @@ async def update_task(
                 "task_info", content=task_info, theme_id=task.theme_id, task_id=task.id
             )
     # Update task's input values
-    if task_update.get("input"):
+    if new_task_info[2]:
         try:
             await FileUtils.save_file_values(
                 "task_input", content=task_update.get("input"),
@@ -123,7 +130,7 @@ async def update_task(
         except FileNotFoundError:
             return JSONResponse(status_code=404, content={"message": "Task not found"})
     # Update task answer's output values
-    if task_update.get("output"):
+    if new_task_info[3]:
         try:
             await FileUtils.save_file_values(
                 "task_output", content=task_update.get("output"),
@@ -132,11 +139,13 @@ async def update_task(
         except FileNotFoundError:
             return JSONResponse(status_code=404, content={"message": "Task not found"})
     # Update task's code file
-    if code:
+    if new_task_info[4]:
         try:
             await FileUtils.save_file(
-                "task_code", content=await code.read(), theme_id=theme_id, task_id=task.id
+                "task_code", content=new_task_info[4], theme_id=theme_id, task_id=task.id
             )
+        except IndexError:
+            return JSONResponse(status_code=404, content={"message": "Theme not found"})
         except FileNotFoundError:
             return JSONResponse(status_code=404, content={"message": "Task not found"})
     return Task(task_id=task.id, **task_update)
