@@ -1,14 +1,18 @@
 import pytest
 from httpx import AsyncClient
 from main import app
-from utilities.test_scripts import get_simple_code
+
+
+async def get_simple_code():
+    simple_code = b'print("OK")\nprint("OK")\nprint("OK")\n'
+    return simple_code
 
 
 @pytest.mark.asyncio
 async def test_check_theme_not_found():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post(f"api/check/999/999", files={
-            'file': await get_simple_code()
+            'file': b""
         })
     assert response.status_code == 404
     assert response.json() == {'message': 'Theme not found'}
@@ -18,10 +22,11 @@ async def test_check_theme_not_found():
 async def test_check_task_not_found():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post(f"api/check/0/999", files={
-            'file': await get_simple_code()
+            'file': b""
         })
     assert response.status_code == 404
     assert response.json() == {'message': 'Task not found'}
+
 
 @pytest.mark.asyncio
 async def test_check_answer_success():
@@ -29,12 +34,12 @@ async def test_check_answer_success():
         # Please write this content: "OK\nOK\nOK'
         # in the output file materials/0_test/output/task_1.txt
         response = await ac.post(f"api/check/0/1", files={
-            'file': await get_simple_code()
+            'file': b"print(input())"
         })
     assert response.status_code == 200
-    assert response.json() == {'answer': 'OK\nOK\nOK',
+    assert response.json() == {'answer': 'Hello, World!',
                                'status': 'OK',
-                               'your_result': 'OKOKOK'}
+                               'your_result': 'Hello, World!'}
 
 
 @pytest.mark.asyncio
@@ -46,6 +51,6 @@ async def test_check_answer_fail():
             'file': b'print("OK")'
         })
     assert response.status_code == 200
-    assert response.json() == {'answer': 'OK\nOK\nOK',
+    assert response.json() == {'answer': 'Hello, World!',
                                'status': 'WRONG',
                                'your_result': 'OK'}
