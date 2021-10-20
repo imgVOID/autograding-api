@@ -100,7 +100,7 @@ async def test_task_read_not_found():
 
 @pytest.mark.asyncio
 async def test_task_create_not_found():
-    async with open(join(dirname(abspath(__file__)), 'data', 'new_task_fail.json'),
+    async with open(join(dirname(abspath(__file__)), 'data', 'new_task.json'),
                     mode='r', encoding='utf-8') as f:
         name = f.name
         description = await f.read()
