@@ -4,7 +4,6 @@ from fastapi.encoders import jsonable_encoder
 from routers import router_tasks
 from schemas.tasks import (Task, TaskList, TaskUpdate, TaskCreate, NotFoundMessage)
 from utilities.file_scripts import FileUtils
-from typing import Union
 
 
 @router_tasks.get("/{theme_id}", status_code=200,
@@ -99,10 +98,11 @@ async def create_task(task: TaskCreate or UploadFile, theme_id: int,
                   response_model=TaskUpdate, response_model_exclude_none=True,
                   summary="Update task by ID")
 async def update_task(theme_id: int, task_id: int, task: TaskUpdate,
-                      code: Union[str, UploadFile] = File(None)) -> Task or JSONResponse:
+                      code: UploadFile = File(None)) -> Task or JSONResponse:
     """The `update task` CRUD endpoint.\n
     You can update description, code, inputs and outputs,
     one at a time, or all at once.\n
+    Please uncheck "Send empty value" in Swagger UI!
     """
     if isinstance(task, UploadFile):
         task = TaskUpdate(**jsonable_encoder(task))
