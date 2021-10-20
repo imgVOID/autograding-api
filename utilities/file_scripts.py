@@ -84,8 +84,10 @@ class FileUtils:
                     return content
                 else:
                     raise ValueError('Wrong file extension.')
-        except FileNotFoundError:
-            print(f'File not found: title={title}, theme_id={theme_id}, task_id={task_id}')
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                f'File not found: title={title}, theme_id={theme_id}, task_id={task_id}'
+            ) from e
 
     @classmethod
     async def open_file_values(cls: 'FileUtils', title: str,
