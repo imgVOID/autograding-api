@@ -7,3 +7,4 @@ pytest-asyncio
 python-multipart
 uvicorn
 httpx
+slowapi

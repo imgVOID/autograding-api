@@ -1,10 +1,10 @@
 from json import loads
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 
 
 class NotFoundMessage(BaseModel):
-    message: str = "Task not found"
+    message: str = "The theme or task is not found by the ID."
 
 
 class Task(BaseModel):
@@ -27,13 +27,6 @@ class Task(BaseModel):
                 "output": ["First output", "2"],
             }
         }
-
-
-class TaskList(BaseModel):
-    theme_id: int
-    theme_name: str
-    tasks_count: int
-    tasks: List[Task]
 
 
 class TaskCreate(BaseModel):
