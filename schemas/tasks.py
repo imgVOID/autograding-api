@@ -1,6 +1,6 @@
 from json import loads
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class NotFoundMessage(BaseModel):
@@ -16,7 +16,6 @@ class Task(BaseModel):
     output: list[str]
 
     class Config:
-        extra = 'allow'
         schema_extra = {
             "example": {
                 "id": 0,
@@ -28,6 +27,13 @@ class Task(BaseModel):
                 "output": ["First output", "2"],
             }
         }
+
+
+class TaskList(BaseModel):
+    theme_id: int
+    theme_name: str
+    tasks_count: int
+    tasks: List[Task]
 
 
 class TaskCreate(BaseModel):
