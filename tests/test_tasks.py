@@ -10,19 +10,6 @@ tasks_count = None
 
 
 @pytest.mark.asyncio
-async def test_task_list():
-    async with AsyncClient(app=app, base_url="https://") as ac:
-        response = await ac.get("/api/tasks/0")
-
-    assert response.status_code == 200
-    assert response.json()["theme_id"] == 0
-    assert response.json()['tasks_count'] == len(response.json()["tasks"])
-
-    global tasks_count
-    tasks_count = response.json()['tasks_count'] + 1
-
-
-@pytest.mark.asyncio
 async def test_task_create():
     async with open(join(dirname(abspath(__file__)), 'data', 'new_task.json'),
                     mode='r', encoding='utf-8') as f:
@@ -36,6 +23,9 @@ async def test_task_create():
     assert response.status_code == 201
     assert response.json().get("title") == 'string'
     assert response.json().get("theme_id") == 0
+
+    global tasks_count
+    tasks_count = response.json()["id"]
 
 
 @pytest.mark.asyncio
@@ -73,15 +63,6 @@ async def test_task_delete():
     async with AsyncClient(app=app, base_url="https://") as ac:
         response = await ac.delete(f"/api/tasks/0/{tasks_count}", params={"test": True})
     assert response.status_code == 204
-
-
-@pytest.mark.asyncio
-async def test_task_list_not_found():
-    async with AsyncClient(app=app, base_url="https://") as ac:
-        response_not_found_theme = await ac.get("/api/tasks/999")
-
-    assert response_not_found_theme.status_code == 404
-    assert response_not_found_theme.json()["message"] == "Theme not found"
 
 
 @pytest.mark.asyncio

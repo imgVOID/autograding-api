@@ -7,6 +7,10 @@ tags_metadata = [
         "description": "Task management with description, solution code, input and output data.",
     },
     {
+        "name": "themes",
+        "description": "Theme management with description and task list."
+    },
+    {
         "name": "check",
         "description": "Checking if the user's answer is correct: "
                        "running the code safely in a Docker container and comparing the result."
