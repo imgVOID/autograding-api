@@ -112,14 +112,14 @@ class FileUtils:
             await f.write(content)
 
     @classmethod
-    async def save_file_values(cls: 'FileUtils', title: str, content_sequence: Iterable[str],
+    async def save_file_values(cls: 'FileUtils', title: str, content: Iterable[str],
                                theme_id: int = None, task_id: int = None) -> None:
         path = await cls._get_filepath(title, theme_id, task_id)
         async with open(path, mode='w', encoding='utf-8') as f:
             if not f.name.endswith('.txt'):
                 raise ValueError('Wrong file extension.')
             else:
-                for value in content_sequence:
+                for value in content:
                     await f.writelines(f'{value}\n')
 
     @classmethod
