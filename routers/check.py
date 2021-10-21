@@ -38,7 +38,7 @@ async def check_user_answer(
         task_id=task_id, theme_id=theme_id, code=await file.read(), extension=extension
     )
     # Run user input into the Docker container
-    user_answer = await DockerUtils.docker_setup(
+    user_answer = await DockerUtils.docker_check_user_answer(
         theme_name, theme_id, task_id, random_id, extension
     )
     # Check container's stdout
