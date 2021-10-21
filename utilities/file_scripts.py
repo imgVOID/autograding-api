@@ -1,8 +1,8 @@
 """
 `file_scripts` module stores tasks I/O utilities.
 """
-from os import remove
-from os.path import abspath, join, normpath
+from os import remove, mkdir
+from os.path import abspath, join, normpath, exists
 from aiofiles import open
 from json import loads, dumps
 from random import randint
@@ -71,9 +71,19 @@ class FileUtils:
         path = abspath(normpath(join(
             'temp', f'task_{theme_id}_{task_id}_{random_id}.{extension}'
         )))
-        async with open(path, encoding='utf-8', mode='w') as f:
-            await f.write(code.decode('utf-8'))
-        return random_id
+        try:
+            async with open(path, encoding='utf-8', mode='w') as f:
+                await f.write(code.decode('utf-8'))
+        except FileNotFoundError:
+            try:
+                mkdir("./temp")
+            except FileExistsError:
+                raise FileNotFoundError("Something went wrong until the input saving")
+            else:
+                async with open(path, encoding='utf-8', mode='w') as f:
+                    await f.write(code.decode('utf-8'))
+        finally:
+            return random_id
 
     @classmethod
     async def open_file(
