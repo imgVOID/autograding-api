@@ -1,3 +1,6 @@
+"""
+`file_scripts` module stores tasks I/O utilities.
+"""
 from os import remove
 from os.path import abspath, join, normpath
 from aiofiles import open
@@ -15,7 +18,7 @@ class FileUtils:
             cls: 'FileUtils', title: str, theme_id: int = None, task_id: int = None
     ) -> str or None:
         """
-        `DockerUtils._get_filepath` private class method returns the path to a file by path name.
+        `FileUtils._get_filepath` private class method returns the path to a file by path name.
         It takes three parameters (excluding cls):
         1. `title` has four variants: task_info, task_input, task_output, task_code.
         2. `theme_id` means an id of the theme and the directory name.
@@ -57,7 +60,7 @@ class FileUtils:
             cls: 'FileUtils', theme_id: int, task_id: int, code: bytes, extension: str
     ) -> int:
         """
-        `DockerUtils.save_user_input` public class method saves user input on a disk.
+        `FileUtils.save_user_input` public class method saves user input on a disk.
         It returns the name of a file uploaded by the user, and a random number.
         It takes three parameters (excluding cls):
         1. `code` is the bytes object with the user input untrusted code.
@@ -77,7 +80,7 @@ class FileUtils:
             cls: 'FileUtils', title: str, theme_id: int = None, task_id: int = None
     ) -> dict or str:
         """
-        `DockerUtils.open_file` public class method accesses
+        `FileUtils.open_file` public class method accesses
         theme index, task description or task code.
         It returns the content of the file read.
         It takes three parameters (excluding cls):
@@ -106,7 +109,7 @@ class FileUtils:
             cls: 'FileUtils', title: str, theme_id: int = None, task_id: int = None
     ) -> List[bytes]:
         """
-        `DockerUtils.open_file_values` public class method accesses
+        `FileUtils.open_file_values` public class method accesses
         task input and task output values.
         It returns the content of the file read, separated by a newline.
         It takes three parameters (excluding cls):
@@ -128,7 +131,7 @@ class FileUtils:
             theme_id: int = None, task_id: int = None
     ) -> None:
         """
-        `DockerUtils.save_file` public class method writes
+        `FileUtils.save_file` public class method writes
         theme index, task description or task code to file.
         It takes four parameters (excluding cls):
         1. `title` has 3 variants - theme_index, task_info, task_code.
@@ -152,7 +155,7 @@ class FileUtils:
             theme_id: int = None, task_id: int = None
     ) -> None:
         """
-        `DockerUtils.save_file_values` public class method writes
+        `FileUtils.save_file_values` public class method writes
         task input and task output values to file.
         It takes four parameters:
         1. `title` has 2 variants - task_input, task_output.
@@ -173,7 +176,7 @@ class FileUtils:
             cls: 'FileUtils', title: str, theme_id: int, task_id: int
     ) -> None:
         """
-        `DockerUtils.remove_file` public class method removes
+        `FileUtils.remove_file` public class method removes
         any file related to a task.
         It takes three parameters:
         1. `title` has 5 variants - theme_index, task_info, task_code, task_input, task_output.

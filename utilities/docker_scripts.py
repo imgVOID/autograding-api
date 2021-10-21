@@ -26,7 +26,7 @@ class DockerUtils:
             task_id: int, random_id: int, extension: str
     ) -> Tuple[Image, str] or None:
         """
-        `DockerUtils._docker_image_build()` private class method
+        `DockerUtils._docker_image_build` private class method
         returns an image for the check container.
         """
         user_input_name = f"task_{theme_id}_{task_id}_{random_id}.{extension}"
@@ -52,7 +52,7 @@ class DockerUtils:
             cls: 'DockerUtils', image: Image, theme_name: str, task_id: int, random_id: int
     ) -> str:
         """
-        `DockerUtils._docker_container_run()` private class method requires a Docker-image
+        `DockerUtils._docker_container_run` private class method requires a Docker-image
         and returns the result of executing user input in the container.
         """
         answer = ""
@@ -82,7 +82,7 @@ class DockerUtils:
             task_id: int, random_id: int, extension: str
     ) -> str:
         """
-        `DockerUtils.docker_check_user_answer()` class method is a public interface method,
+        `DockerUtils.docker_check_user_answer` class method is a public interface method,
         returns the result of executing user input in the container.
         """
         image, user_input_path = await cls._docker_image_build(
@@ -95,7 +95,7 @@ class DockerUtils:
     @staticmethod
     def fix_docker_bug() -> None:
         """
-        `DockerUtils.fix_docker_bug()` staticmethod making it possible
+        `DockerUtils.fix_docker_bug` staticmethod making it possible
         to dynamically define dockerfiles with the BytesIO.
         """
         build.process_dockerfile = lambda file, path: ('Dockerfile', file)
