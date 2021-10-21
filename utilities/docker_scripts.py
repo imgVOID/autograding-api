@@ -37,9 +37,8 @@ class DockerUtils:
         user_input_path = f"./temp/{user_input_name}"
         dockerfile = f'''
             FROM python:3.9-alpine
-            ADD {user_input_path} /
-            ADD ./materials/{theme_name}/input/task_{task_id}.txt /
-            CMD cat ./task_{task_id}.txt | python -u ./{user_input_name}
+            ADD {user_input_path} ./materials/{theme_name}/input/task_{task_id}.txt /
+            CMD cat task_{task_id}.txt | python -u {user_input_name}
             '''
         try:
             image = cls.client.images.build(
