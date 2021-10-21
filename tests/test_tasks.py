@@ -110,7 +110,7 @@ class TestTasksErrors:
         assert response_not_found_theme.json()["error"] == "Theme not found by ID"
 
     @pytest.mark.asyncio
-    async def test_task_delete_not_found_task(self):
+    async def test_task_delete_not_found(self):
         async with AsyncClient(app=app, base_url="https://") as ac:
             response_not_found_task = await ac.delete(f"/api/tasks/0/999", params={"test": True})
         async with AsyncClient(app=app, base_url="https://") as ac:

@@ -5,7 +5,7 @@ from main import app
 
 class TestThemesCRUD:
     @pytest.mark.asyncio
-    async def test_task_list(self):
+    async def test_themes_read(self):
         async with AsyncClient(app=app, base_url="https://") as ac:
             response = await ac.get("/api/themes/0")
 
@@ -16,7 +16,7 @@ class TestThemesCRUD:
 
 class TestThemesErrors:
     @pytest.mark.asyncio
-    async def test_task_list_not_found(self):
+    async def test_themes_read_not_found(self):
         async with AsyncClient(app=app, base_url="https://") as ac:
             response_not_found_theme = await ac.get("/api/themes/999")
 
