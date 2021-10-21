@@ -14,7 +14,3 @@ class CheckResult(BaseModel):
                 "status": "OK or WRONG",
             }
         }
-
-
-class UnavailableMessage(BaseModel):
-    message: str = "Docker problems, please try again later."

@@ -3,10 +3,6 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class NotFoundMessage(BaseModel):
-    message: str = "The theme or task is not found by the ID."
-
-
 class Task(BaseModel):
     id: int
     theme_id: int
