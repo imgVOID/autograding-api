@@ -4,6 +4,10 @@ from typing import Optional
 
 
 class Task(BaseModel):
+    """
+    `Task` is a pydantic model defining the schema
+    for getting a full task info via GET requests.
+    """
     id: int
     theme_id: int
     title: str
@@ -26,6 +30,10 @@ class Task(BaseModel):
 
 
 class TaskCreate(BaseModel):
+    """
+    `TaskCreate` is a pydantic model defining the schema
+    to create a new task via POST requests.
+    """
     title: str
     description: list[str]
     input: list[str]
@@ -55,6 +63,10 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
+    """
+    `TaskUpdate` is a pydantic model defining the schema
+    to full or partial update a task via PUT requests.
+    """
     title: str
     description: Optional[list[str]] = None
     input: Optional[list[str]] = None

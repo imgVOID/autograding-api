@@ -2,6 +2,10 @@ from pydantic import BaseModel
 
 
 class CheckResult(BaseModel):
+    """
+    `CheckResult` is a pydantic model defining the schema
+    for displaying a Docker check result.
+    """
     answer: str
     your_result: str
     status: str
