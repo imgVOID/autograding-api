@@ -11,8 +11,9 @@ from typing import List, Iterable
 
 class FileUtils:
     @classmethod
-    async def _get_filepath(cls: 'FileUtils', title: str,
-                            theme_id: int = None, task_id: int = None) -> str or None:
+    async def _get_filepath(
+            cls: 'FileUtils', title: str, theme_id: int = None, task_id: int = None
+    ) -> str or None:
         """
         `_get_filepath` private class method returns the path to a file by path name.
         It takes three parameters:
@@ -52,8 +53,9 @@ class FileUtils:
             raise ValueError(f'No such get_filepath() mode like "{title}"') from e
 
     @classmethod
-    async def save_user_answer(cls: 'FileUtils', theme_id: int, task_id: int,
-                               code: bytes, extension: str) -> int:
+    async def save_user_answer(
+            cls: 'FileUtils', theme_id: int, task_id: int, code: bytes, extension: str
+    ) -> int:
         """
         `save_user_input` class method saves user input on a disk.
         It returns the name of a file uploaded by the user, and a random number.
@@ -71,8 +73,9 @@ class FileUtils:
         return random_id
 
     @classmethod
-    async def open_file(cls: 'FileUtils', title: str,
-                        theme_id: int = None, task_id: int = None) -> dict or str:
+    async def open_file(
+            cls: 'FileUtils', title: str, theme_id: int = None, task_id: int = None
+    ) -> dict or str:
         path = await cls._get_filepath(title, theme_id, task_id)
         try:
             async with open(path, encoding='utf-8', mode='r') as f:
@@ -90,8 +93,9 @@ class FileUtils:
             ) from e
 
     @classmethod
-    async def open_file_values(cls: 'FileUtils', title: str,
-                               theme_id: int = None, task_id: int = None) -> List[bytes]:
+    async def open_file_values(
+            cls: 'FileUtils', title: str, theme_id: int = None, task_id: int = None
+    ) -> List[bytes]:
         path = await cls._get_filepath(title, theme_id, task_id)
         async with open(path, encoding='utf-8', mode='r') as f:
             if f.name.endswith('.txt'):
@@ -101,8 +105,10 @@ class FileUtils:
                 raise ValueError('Wrong file extension.')
 
     @classmethod
-    async def save_file(cls: 'FileUtils', title: str, content: bytes or dict,
-                        theme_id: int = None, task_id: int = None) -> None:
+    async def save_file(
+            cls: 'FileUtils', title: str, content: bytes or dict,
+            theme_id: int = None, task_id: int = None
+    ) -> None:
         path = await cls._get_filepath(title, theme_id, task_id)
         async with open(path, encoding='utf-8', mode='w') as f:
             if f.name.endswith('.json'):
@@ -114,8 +120,10 @@ class FileUtils:
             await f.write(content)
 
     @classmethod
-    async def save_file_values(cls: 'FileUtils', title: str, content: Iterable[str],
-                               theme_id: int = None, task_id: int = None) -> None:
+    async def save_file_values(
+            cls: 'FileUtils', title: str, content: Iterable[str],
+            theme_id: int = None, task_id: int = None
+    ) -> None:
         path = await cls._get_filepath(title, theme_id, task_id)
         async with open(path, mode='w', encoding='utf-8') as f:
             if not f.name.endswith('.txt'):
@@ -125,7 +133,9 @@ class FileUtils:
                     await f.writelines(f'{value}\n')
 
     @classmethod
-    async def remove_file(cls, title, theme_id, task_id) -> None:
+    async def remove_file(
+            cls: 'FileUtils', title: str, theme_id: int, task_id: int
+    ) -> None:
         path = await cls._get_filepath(title, theme_id, task_id)
         try:
             remove(path)
