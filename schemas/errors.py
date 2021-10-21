@@ -1,3 +1,6 @@
+"""
+`schemas.errors` module defines pydantic models for different error responses.
+"""
 from pydantic import BaseModel
 
 
