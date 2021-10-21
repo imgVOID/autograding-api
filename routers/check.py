@@ -4,14 +4,16 @@ from fastapi.requests import Request
 from routers import router_check, limiter
 from utilities.docker_scripts import DockerUtils
 from utilities.file_scripts import FileUtils
-from schemas.check import CheckResult, UnavailableMessage
-from schemas.tasks import NotFoundMessage
+from schemas.errors import NotFoundTask, NotFoundTheme, RateLimit, DockerUnavailable
+from schemas.check import CheckResult
 
 
 @router_check.post(
-    "/{theme_id}/{task_id}", status_code=200,
-    response_model=CheckResult, summary="Check user's answer",
-    responses={404: {"model": NotFoundMessage}, 503: {"model": UnavailableMessage}}
+    "/{theme_id}/{task_id}", status_code=200, summary="Check user's answer",
+    response_model=CheckResult, responses={
+        404: {"model": NotFoundTask}, 429: {"model": RateLimit},
+        503: {"model": DockerUnavailable}
+    }
 )
 @limiter.limit("2/minute")
 async def check_user_answer(
@@ -23,12 +25,12 @@ async def check_user_answer(
     try:
         theme_name = theme_index[theme_id].get('path')
     except IndexError or AttributeError:
-        return JSONResponse(status_code=404, content={"message": "Theme not found"})
+        return JSONResponse(status_code=404, content=NotFoundTheme().dict())
     # Get expected output
     try:
         expected_answer = await FileUtils.open_file("task_output", theme_id, task_id)
     except FileNotFoundError:
-        return JSONResponse(status_code=404, content={"message": "Task not found"})
+        return JSONResponse(status_code=404, content=NotFoundTask().dict())
     else:
         expected_answer = expected_answer.decode('utf-8')
     # Save user input
@@ -41,8 +43,7 @@ async def check_user_answer(
     )
     # Check container's stdout
     if not user_answer:
-        return JSONResponse(status_code=503,
-                            content={"message": "Docker problems, please try again later"})
+        return JSONResponse(status_code=503, content=DockerUnavailable().dict())
     elif user_answer.replace('\n', '') == expected_answer.replace('\n', ''):
         return CheckResult(status='OK', answer=expected_answer,
                            your_result=user_answer)

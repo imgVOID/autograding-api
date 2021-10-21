@@ -15,7 +15,7 @@ async def test_check_theme_not_found():
             'file': b""
         })
     assert response.status_code == 404
-    assert response.json() == {'message': 'Theme not found'}
+    assert response.json() == {'error': 'Theme not found by ID'}
 
 
 @pytest.mark.asyncio
@@ -25,7 +25,7 @@ async def test_check_task_not_found():
             'file': b""
         })
     assert response.status_code == 404
-    assert response.json() == {'message': 'Task not found'}
+    assert response.json() == {'error': 'Task not found by ID'}
 
 
 @pytest.mark.asyncio
@@ -54,3 +54,16 @@ async def test_check_answer_fail():
     assert response.json() == {'answer': 'Hello, World!',
                                'status': 'WRONG',
                                'your_result': 'OK'}
+
+
+@pytest.mark.asyncio
+async def test_check_answer_limit():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        # Please write this content: "OK\nOK\nOK'
+        # in the output file materials/0_test/output/task_1.txt
+        response = await ac.post(f"api/check/0/1", files={
+            'file': b'print("OK")'
+        })
+    assert response.status_code == 429
+    assert response.json() == {'error': 'Rate limit exceeded: 2 per 1 minute'}
+

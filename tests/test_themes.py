@@ -19,4 +19,4 @@ async def test_task_list_not_found():
         response_not_found_theme = await ac.get("/api/themes/999")
 
     assert response_not_found_theme.status_code == 404
-    assert response_not_found_theme.json()["message"] == "Theme not found"
+    assert response_not_found_theme.json()["error"] == "Theme not found by ID"

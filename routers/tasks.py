@@ -3,13 +3,14 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.requests import Request
 from fastapi.encoders import jsonable_encoder
 from routers import router_tasks, limiter
-from schemas.tasks import (Task, TaskUpdate, TaskCreate, NotFoundMessage)
+from schemas.tasks import Task, TaskUpdate, TaskCreate
+from schemas.errors import NotFoundTheme, NotFoundTask, EmptyRequest
 from utilities.file_scripts import FileUtils
 
 
 @router_tasks.get(
     "/{theme_id}/{task_id}", status_code=200, summary="Read task by ID",
-    response_model=Task, responses={404: {"model": NotFoundMessage}},
+    response_model=Task, responses={404: {"model": NotFoundTask}},
 )
 async def read_task(theme_id: int, task_id: int) -> Task or JSONResponse:
     """The `read task` CRUD endpoint."""
@@ -19,16 +20,16 @@ async def read_task(theme_id: int, task_id: int) -> Task or JSONResponse:
         inputs = await FileUtils.open_file_values('task_input', theme_id, task_id)
         outputs = await FileUtils.open_file_values('task_output', theme_id, task_id)
     except FileNotFoundError:
-        return JSONResponse(status_code=404, content={"message": "Task not found"})
+        return JSONResponse(status_code=404, content=NotFoundTask().dict())
     except IndexError:
-        return JSONResponse(status_code=404, content={"message": "Theme not found"})
+        return JSONResponse(status_code=404, content=NotFoundTheme().dict())
     else:
         return Task(**description, input=list(inputs), output=list(outputs))
 
 
 @router_tasks.post(
     "/{theme_id}", status_code=201, summary="Create new task",
-    response_model=Task, responses={404: {"model": NotFoundMessage}}
+    response_model=Task, responses={404: {"model": NotFoundTheme}}
 )
 @limiter.limit("10/minute")
 async def create_task(
@@ -40,7 +41,7 @@ async def create_task(
     try:
         themes_json = await FileUtils.open_file('theme_index', theme_id=theme_id)
     except IndexError:
-        return JSONResponse(status_code=404, content={"message": "Theme not found"})
+        return JSONResponse(status_code=404, content=NotFoundTheme().dict())
     if isinstance(task, UploadFile):
         task = TaskCreate(**jsonable_encoder(task))
     # Get ID
@@ -77,7 +78,7 @@ async def create_task(
 @router_tasks.put(
     "/{theme_id}/{task_id}", status_code=200, summary="Update task by ID",
     response_model=TaskUpdate, response_model_exclude_none=True,
-    responses={404: {"model": NotFoundMessage}}
+    responses={404: {"model": NotFoundTask}}
 )
 @limiter.limit("10/minute")
 async def update_task(
@@ -101,7 +102,7 @@ async def update_task(
     )
     # Check if there was an empty request
     if not any(new_task_info):
-        return JSONResponse(status_code=422, content={"message": "The request was empty"})
+        return JSONResponse(status_code=422, content=EmptyRequest().dict())
     # Update task's description
     if any(new_task_info[0:2]):
         try:
@@ -110,9 +111,9 @@ async def update_task(
                 "task_info", theme_id=theme_id, task_id=task_id
             )
         except FileNotFoundError:
-            return JSONResponse(status_code=404, content={"message": "Task not found"})
+            return JSONResponse(status_code=404, content=NotFoundTask().dict())
         except IndexError:
-            return JSONResponse(status_code=404, content={"message": "Theme not found"})
+            return JSONResponse(status_code=404, content=NotFoundTheme().dict())
         else:
             task_info["title"] = new_task_info[0] if new_task_info[0] else task_info["title"]
             task_info["description"] = new_task_info[1] if new_task_info[1] else task_info["description"]
@@ -128,7 +129,7 @@ async def update_task(
                 theme_id=theme_id, task_id=task.id,
             )
         except FileNotFoundError:
-            return JSONResponse(status_code=404, content={"message": "Task not found"})
+            return JSONResponse(status_code=404, content=NotFoundTask().dict())
     # Update task answer's output values
     if new_task_info[3]:
         try:
@@ -137,7 +138,7 @@ async def update_task(
                 theme_id=theme_id, task_id=task.id,
             )
         except FileNotFoundError:
-            return JSONResponse(status_code=404, content={"message": "Task not found"})
+            return JSONResponse(status_code=404, content=NotFoundTask().dict())
     # Update task's code file
     if new_task_info[4]:
         try:
@@ -145,15 +146,15 @@ async def update_task(
                 "task_code", content=new_task_info[4], theme_id=theme_id, task_id=task.id
             )
         except IndexError:
-            return JSONResponse(status_code=404, content={"message": "Theme not found"})
+            return JSONResponse(status_code=404, content=NotFoundTheme().dict())
         except FileNotFoundError:
-            return JSONResponse(status_code=404, content={"message": "Task not found"})
+            return JSONResponse(status_code=404, content=NotFoundTask().dict())
     return Task(task_id=task.id, **task_update)
 
 
 @router_tasks.delete(
     "/{theme_id}/{task_id}", status_code=204, summary="Delete task by ID",
-    responses={404: {"model": NotFoundMessage}}
+    responses={404: {"model": NotFoundTask}}
 )
 @limiter.limit("10/minute")
 async def delete_task(
@@ -164,10 +165,10 @@ async def delete_task(
     for title in files:
         try:
             await FileUtils.remove_file(title, theme_id=theme_id, task_id=task_id)
-        except FileNotFoundError:
-            return JSONResponse(status_code=404, content={"message": "Task not found"})
         except IndexError:
-            return JSONResponse(status_code=404, content={"message": "Theme not found"})
+            return JSONResponse(status_code=404, content=NotFoundTheme().dict())
+        except FileNotFoundError:
+            return JSONResponse(status_code=404, content=NotFoundTask().dict())
     # Open themes info
     themes = await FileUtils.open_file('theme_index')
     # Update the theme tasks count
