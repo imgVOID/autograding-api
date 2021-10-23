@@ -81,7 +81,7 @@ async def create_task(
     return task
 
 
-@router_tasks.put(
+@router_tasks.patch(
     "/{theme_id}/{task_id}", status_code=200, summary="Update task by ID",
     response_model=TaskUpdate, response_model_exclude_none=True,
     responses={404: {"model": NotFoundTask}}

@@ -44,7 +44,7 @@ class TestTasksCRUD:
             files = {"task": (None, b'{"title": "", "description": ["test"], '
                                     b'"input": [], "output": []}'),
                      "code": b'print("OK")\nprint("OK")\nprint("OK")\n'}
-            response = await ac.put(f"/api/tasks/0/{self.tasks_count}", files=files)
+            response = await ac.patch(f"/api/tasks/0/{self.tasks_count}", files=files)
         content = response.json()
 
         assert response.status_code == 200
@@ -96,13 +96,13 @@ class TestTasksErrors:
             files = {"task": (None, b'{"title": "", "description": ["string"], '
                                     b'"input": [], "output": []}'),
                      "code": b''}
-            response_not_found_task = await ac.put(f"/api/tasks/0/9999", files=files)
+            response_not_found_task = await ac.patch(f"/api/tasks/0/9999", files=files)
 
         async with AsyncClient(app=app, base_url="https://") as ac:
             files = {"task": (None, b'{"title": "", "description": ["string"], '
                                     b'"input": [], "output": []}'),
                      "code": b''}
-            response_not_found_theme = await ac.put(f"/api/tasks/9999/9999", files=files)
+            response_not_found_theme = await ac.patch(f"/api/tasks/9999/9999", files=files)
 
         assert response_not_found_task.status_code == 404
         assert response_not_found_theme.status_code == 404
@@ -126,7 +126,7 @@ class TestTasksErrors:
             files = {"task": (None, b'{"title": "", "description": [], '
                                     b'"input": [], "output": []}'),
                      "code": b''}
-            response_not_found_task = await ac.put(f"/api/tasks/0/999", files=files)
+            response_not_found_task = await ac.patch(f"/api/tasks/0/999", files=files)
 
         assert response_not_found_task.status_code == 422
         assert response_not_found_task.json()["detail"] == "The request was empty"
