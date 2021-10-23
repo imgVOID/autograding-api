@@ -4,7 +4,7 @@ from fastapi.requests import Request
 from routers import limiter
 from utilities.docker_scripts import DockerUtils
 from utilities.file_scripts import FileUtils
-from schemas.errors import NotFoundTask, NotFoundTheme, RateLimit, DockerUnavailable
+from schemas.errors import NotFoundTask, NotFoundTheme, RateLimitExceeded, DockerUnavailable
 from schemas.check import CheckResult
 
 router_check = APIRouter(
@@ -17,7 +17,7 @@ router_check = APIRouter(
 @router_check.post(
     "/{theme_id}/{task_id}", status_code=200, summary="Check user's answer",
     response_model=CheckResult, responses={
-        404: {"model": NotFoundTask}, 429: {"model": RateLimit},
+        404: {"model": NotFoundTask}, 429: {"model": RateLimitExceeded},
         503: {"model": DockerUnavailable}
     }
 )

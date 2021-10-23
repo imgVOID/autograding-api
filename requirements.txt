@@ -12,3 +12,5 @@ sqlalchemy
 databases
 aiosqlite
 email-validator
+python-jose[cryptography]
+passlib[bcrypt]

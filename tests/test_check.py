@@ -53,4 +53,4 @@ class TestCheck:
                 'file': b'print("OK")'
             })
         assert response.status_code == 429
-        assert response.json() == {'detail': 'Rate limit exceeded: 2 per 1 minute'}
+        assert response.json() == {'error': 'Rate limit exceeded: 2 per 1 minute'}
