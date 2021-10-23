@@ -4,16 +4,20 @@ The `app_metadata` module stores data for formatting metadata in the main.py app
 tags_metadata = [
     {
         "name": "tasks",
-        "description": "Task management with description, solution code, input and output data.",
+        "description": "Task management with description, solution code, input and output data",
     },
     {
         "name": "themes",
-        "description": "Theme management with description and task list."
+        "description": "Theme management with description and task list"
     },
     {
         "name": "check",
         "description": "Checking if the user's answer is correct: "
-                       "running the code safely in a Docker container and comparing the result."
+                       "running the code safely in a Docker container and comparing the result"
+    },
+    {
+        "name": "users",
+        "description": "User management section"
     },
 ]
 
