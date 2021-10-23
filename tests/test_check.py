@@ -16,8 +16,8 @@ class TestCheck:
             })
         assert response_theme.status_code == 404
         assert response_task.status_code == 404
-        assert response_theme.json() == {'error': 'Theme not found by ID'}
-        assert response_task.json() == {'error': 'Task not found by ID'}
+        assert response_theme.json() == {'detail': 'Theme not found by ID'}
+        assert response_task.json() == {'detail': 'Task not found by ID'}
 
     @pytest.mark.asyncio
     async def test_check_answer_success(self):
@@ -53,4 +53,4 @@ class TestCheck:
                 'file': b'print("OK")'
             })
         assert response.status_code == 429
-        assert response.json() == {'error': 'Rate limit exceeded: 2 per 1 minute'}
+        assert response.json() == {'detail': 'Rate limit exceeded: 2 per 1 minute'}

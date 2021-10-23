@@ -73,8 +73,8 @@ class TestTasksErrors:
 
         assert response_not_found_task.status_code == 404
         assert response_not_found_theme.status_code == 404
-        assert response_not_found_task.json()["error"] == "Task not found by ID"
-        assert response_not_found_theme.json()["error"] == "Theme not found by ID"
+        assert response_not_found_task.json()["detail"] == "Task not found by ID"
+        assert response_not_found_theme.json()["detail"] == "Theme not found by ID"
 
     @pytest.mark.asyncio
     async def test_task_create_not_found(self):
@@ -88,7 +88,7 @@ class TestTasksErrors:
                 'code': (f'{name}', b'print("OK")\nprint("OK")\nprint("OK")\n'),
             })
         assert response_not_found_theme.status_code == 404
-        assert response_not_found_theme.json()["error"] == "Theme not found by ID"
+        assert response_not_found_theme.json()["detail"] == "Theme not found by ID"
 
     @pytest.mark.asyncio
     async def test_task_update_not_found(self):
@@ -106,8 +106,8 @@ class TestTasksErrors:
 
         assert response_not_found_task.status_code == 404
         assert response_not_found_theme.status_code == 404
-        assert response_not_found_task.json()["error"] == "Task not found by ID"
-        assert response_not_found_theme.json()["error"] == "Theme not found by ID"
+        assert response_not_found_task.json()["detail"] == "Task not found by ID"
+        assert response_not_found_theme.json()["detail"] == "Theme not found by ID"
 
     @pytest.mark.asyncio
     async def test_task_delete_not_found(self):
@@ -116,9 +116,9 @@ class TestTasksErrors:
         async with AsyncClient(app=app, base_url="https://") as ac:
             response_not_found_theme = await ac.delete(f"/api/tasks/999/999", params={"test": True})
         assert response_not_found_task.status_code == 404
-        assert response_not_found_task.json()["error"] == "Task not found by ID"
+        assert response_not_found_task.json()["detail"] == "Task not found by ID"
         assert response_not_found_theme.status_code == 404
-        assert response_not_found_theme.json()["error"] == "Theme not found by ID"
+        assert response_not_found_theme.json()["detail"] == "Theme not found by ID"
 
     @pytest.mark.asyncio
     async def test_task_update_empty_request(self):
@@ -129,4 +129,4 @@ class TestTasksErrors:
             response_not_found_task = await ac.put(f"/api/tasks/0/999", files=files)
 
         assert response_not_found_task.status_code == 422
-        assert response_not_found_task.json()["error"] == "The request was empty"
+        assert response_not_found_task.json()["detail"] == "The request was empty"

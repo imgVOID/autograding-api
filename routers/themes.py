@@ -1,9 +1,15 @@
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from routers import router_themes
 from schemas.themes import Theme
 from schemas.tasks import Task
 from schemas.errors import NotFoundTheme
 from utilities.file_scripts import FileUtils
+
+router_themes = APIRouter(
+    redirect_slashes=False,
+    prefix="/api/themes",
+    tags=["themes"],
+)
 
 
 @router_themes.get(
@@ -17,7 +23,7 @@ async def read_theme(theme_id: int) -> Theme or JSONResponse:
     try:
         themes_json = await FileUtils.open_file('theme_index', theme_id=theme_id)
     except IndexError:
-        return JSONResponse(status_code=404, content=NotFoundTheme().dict())
+        raise HTTPException(status_code=404, detail=NotFoundTheme().error)
     # Get theme by ID
     theme = themes_json[theme_id]
     # Create new theme info object

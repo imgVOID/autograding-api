@@ -8,3 +8,7 @@ python-multipart
 uvicorn
 httpx
 slowapi
+sqlalchemy
+databases
+aiosqlite
+email-validator

@@ -1,11 +1,17 @@
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, APIRouter, HTTPException
 from fastapi.responses import JSONResponse, Response
 from fastapi.requests import Request
-from routers import router_check, limiter
+from routers import limiter
 from utilities.docker_scripts import DockerUtils
 from utilities.file_scripts import FileUtils
 from schemas.errors import NotFoundTask, NotFoundTheme, RateLimit, DockerUnavailable
 from schemas.check import CheckResult
+
+router_check = APIRouter(
+    redirect_slashes=False,
+    prefix="/api/check",
+    tags=["check"],
+)
 
 
 @router_check.post(
@@ -25,12 +31,12 @@ async def check_user_answer(
     try:
         theme_name = theme_index[theme_id].get('path')
     except IndexError or AttributeError:
-        return JSONResponse(status_code=404, content=NotFoundTheme().dict())
+        raise HTTPException(status_code=404, detail=NotFoundTheme().error)
     # Get expected output
     try:
         expected_answer = await FileUtils.open_file("task_output", theme_id, task_id)
     except FileNotFoundError:
-        return JSONResponse(status_code=404, content=NotFoundTask().dict())
+        raise HTTPException(status_code=404, detail=NotFoundTask().error)
     else:
         expected_answer = expected_answer.decode('utf-8')
     # Save user input
@@ -43,7 +49,7 @@ async def check_user_answer(
     )
     # Check container's stdout
     if not user_answer:
-        return JSONResponse(status_code=503, content=DockerUnavailable().dict())
+        raise HTTPException(status_code=404, detail=DockerUnavailable().error)
     elif user_answer.replace('\n', '') == expected_answer.replace('\n', ''):
         return CheckResult(status='OK', answer=expected_answer,
                            your_result=user_answer)
