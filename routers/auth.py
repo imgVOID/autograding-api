@@ -3,8 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database.config import database
 from database.models import users
 from schemas.auth import User, UserCreate
-from utilities.auth_scripts import get_password_hash
-from utilities.auth_scripts import get_current_active_user
+from utilities.auth_scripts import AuthUtils, get_current_active_user
 
 router_users = APIRouter(
     redirect_slashes=False,
@@ -35,7 +34,7 @@ async def create_user(user: UserCreate):
     query = "SELECT * FROM users WHERE email = :email"
     if await database.fetch_one(query=query, values={"email": user.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
-    fake_hashed = get_password_hash(password=user.password)
+    fake_hashed = AuthUtils.get_password_hash(password=user.password)
     query = users.insert().values(
         email=user.email, hashed_password=fake_hashed, is_root=user.is_root, is_active=True
     )

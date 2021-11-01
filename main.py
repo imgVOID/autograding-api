@@ -11,12 +11,10 @@ from routers.check import router_check
 from routers.themes import router_themes
 from routers.auth import router_users
 from database.config import database
-from schemas.auth import UserInDB, Token
+from schemas.auth import Token
 from utilities.docker_scripts import DockerUtils
 from utilities.app_metadata import tags_metadata, app_metadata_description
-from utilities.auth_scripts import (
-    authenticate_user, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-)
+from utilities.auth_scripts import AuthUtils
 
 # FastAPI app instance
 app = FastAPI(title='Autograding-API',
@@ -59,15 +57,15 @@ async def shutdown():
 
 @app.post("/auth/token", response_model=Token, summary="Grab the Bearer token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await authenticate_user(form_data.username, form_data.password)
+    user = await AuthUtils.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = await create_access_token(
+    access_token_expires = timedelta(minutes=AuthUtils.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = await AuthUtils.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
