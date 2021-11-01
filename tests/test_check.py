@@ -20,30 +20,24 @@ class TestCheck:
         assert response_task.json() == {'detail': 'Task not found by ID'}
 
     @pytest.mark.asyncio
-    async def test_check_answer_success(self):
+    async def test_check_answer(self):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             # Please write this content: "Hello, World!'
             # in the output file materials/0_test/output/task_1.txt
-            response = await ac.post(f"api/check/0/1", files={
+            answer_true = await ac.post(f"api/check/0/1", files={
                 'file': b"print(input())"
             })
-        assert response.status_code == 200
-        assert response.json() == {'answer': 'Hello, World!',
-                                   'status': 'OK',
-                                   'your_result': 'Hello, World!'}
-
-    @pytest.mark.asyncio
-    async def test_check_answer_fail(self):
         async with AsyncClient(app=app, base_url="http://test") as ac:
-            # Please write this content: "Hello, World!'
-            # in the output file materials/0_test/output/task_1.txt
-            response = await ac.post(f"api/check/0/1", files={
-                'file': b'print("OK")'
+            answer_false = await ac.post(f"api/check/0/1", files={
+                'file': b'print("Fail!")'
             })
-        assert response.status_code == 200
-        assert response.json() == {'answer': 'Hello, World!',
-                                   'status': 'WRONG',
-                                   'your_result': 'OK'}
+        assert all([answer_true.status_code == 200, answer_false.status_code == 200])
+        assert answer_true.json() == {
+            'answer': 'Hello, World!', 'status': 'OK', 'your_result': 'Hello, World!'
+        }
+        assert answer_false.json() == {
+            'answer': 'Hello, World!', 'status': 'WRONG', 'your_result': 'Fail!'
+        }
 
     @pytest.mark.asyncio
     async def test_check_answer_limit(self):

@@ -1,9 +1,10 @@
 """
 `file_scripts` module stores tasks I/O utilities.
 """
+import aiofiles
+from tempfile import gettempdir
 from os import remove, mkdir
-from os.path import abspath, join, normpath, exists
-from aiofiles import open
+from os.path import abspath, join, normpath, dirname
 from json import loads, dumps
 from random import randint
 from typing import List, Iterable
@@ -13,6 +14,7 @@ class FileUtils:
     """
     `FileUtils` class stores utilities for saving user input files and file paths.
     """
+
     @classmethod
     async def _get_filepath(
             cls: 'FileUtils', title: str, theme_id: int = None, task_id: int = None
@@ -55,35 +57,18 @@ class FileUtils:
         except KeyError as e:
             raise ValueError(f'No such get_filepath() mode like "{title}"') from e
 
-    @classmethod
-    async def save_user_answer(
-            cls: 'FileUtils', theme_id: int, task_id: int, code: bytes, extension: str
-    ) -> int:
+    @staticmethod
+    async def _write_user_answer_temp(code: bytes) -> str:
         """
-        `FileUtils.save_user_input` public class method saves user input on a disk.
-        It returns the name of a file uploaded by the user, and a random number.
-        It takes three parameters (excluding cls):
-        1. `code` is the bytes object with the user input untrusted code.
-        2. `theme` means an id of the theme and the directory name.
-        3. `task_id` means an id of the task in a theme and a part of the file name.
+        `FileUtils._write_user_answer_temp` private static method
+        returns the user input's temp file name.
+        It takes one parameter: code, type: bytes.
         """
-        random_id = randint(0, 100000)
-        path = abspath(normpath(join(
-            'temp', f'task_{theme_id}_{task_id}_{random_id}.{extension}'
-        )))
-        try:
-            async with open(path, encoding='utf-8', mode='w') as f:
-                await f.write(code.decode('utf-8'))
-        except FileNotFoundError:
-            try:
-                mkdir("./temp")
-            except FileExistsError:
-                raise FileNotFoundError("Something went wrong until the input saving")
-            else:
-                async with open(path, encoding='utf-8', mode='w') as f:
-                    await f.write(code.decode('utf-8'))
-        finally:
-            return random_id
+        async with aiofiles.tempfile.NamedTemporaryFile(
+                'wb', delete=False, dir='./temp/'
+        ) as f:
+            await f.write(code)
+            return f.name.split('temp')[1]
 
     @classmethod
     async def open_file(
@@ -100,7 +85,7 @@ class FileUtils:
         """
         path = await cls._get_filepath(title, theme_id, task_id)
         try:
-            async with open(path, encoding='utf-8', mode='r') as f:
+            async with aiofiles.open(path, encoding='utf-8', mode='r') as f:
                 content = await f.read()
                 content = content.encode('utf-8')
                 if '.json' in f.name:
@@ -128,7 +113,7 @@ class FileUtils:
         3. `task_id` means an id of the task in a theme and a part of the file name.
         """
         path = await cls._get_filepath(title, theme_id, task_id)
-        async with open(path, encoding='utf-8', mode='r') as f:
+        async with aiofiles.open(path, encoding='utf-8', mode='r') as f:
             if f.name.endswith('.txt'):
                 content = await f.read()
                 return content.encode('utf-8').split(b'\n')
@@ -150,7 +135,7 @@ class FileUtils:
         4. `task_id` means an id of the task in a theme and a part of the file name.
         """
         path = await cls._get_filepath(title, theme_id, task_id)
-        async with open(path, encoding='utf-8', mode='w') as f:
+        async with aiofiles.open(path, encoding='utf-8', mode='w') as f:
             if f.name.endswith('.json'):
                 content = dumps(content, ensure_ascii=False)
             elif f.name.endswith('.txt'):
@@ -174,7 +159,7 @@ class FileUtils:
         4. `task_id` means an id of the task in a theme and a part of the file name.
         """
         path = await cls._get_filepath(title, theme_id, task_id)
-        async with open(path, mode='w', encoding='utf-8') as f:
+        async with aiofiles.open(path, mode='w', encoding='utf-8') as f:
             if not f.name.endswith('.txt'):
                 raise ValueError('Wrong file extension.')
             else:
@@ -198,3 +183,52 @@ class FileUtils:
             remove(path)
         except OSError as e:
             raise FileNotFoundError(f'File path can not be removed: {path}') from e
+
+    @classmethod
+    async def get_user_answer_temp(
+            cls: 'FileUtils', code: bytes,
+    ) -> str:
+        """
+        `FileUtils.save_user_input` public class method saves user input on a disk.
+        It returns the name of a file uploaded by the user, and a random number.
+        It takes one parameter (excluding cls): code, type: bytes.
+        """
+        try:
+            return await cls._write_user_answer_temp(code)
+        except FileNotFoundError:
+            try:
+                mkdir("./temp")
+            except Exception as e:
+                raise FileNotFoundError("Something went wrong until the input saving") from e
+            else:
+                return await cls._write_user_answer_temp(code)
+
+    @classmethod
+    async def get_user_answer_file(
+            cls: 'FileUtils', theme_id: int, task_id: int, code: bytes, extension: str
+    ) -> int:
+        """
+        `FileUtils.save_user_input` public class method saves user input on a disk.
+        It returns the name of a file uploaded by the user, and a random number.
+        It takes three parameters (excluding cls):
+        1. `code` is the bytes object with the user input untrusted code.
+        2. `theme` means an id of the theme and the directory name.
+        3. `task_id` means an id of the task in a theme and a part of the file name.
+        """
+        random_id = randint(0, 100000)
+        path = abspath(normpath(join(
+            'temp', f'task_{theme_id}_{task_id}_{random_id}.{extension}'
+        )))
+        try:
+            async with aiofiles.open(path, encoding='utf-8', mode='w') as f:
+                await f.write(code.decode('utf-8'))
+        except FileNotFoundError:
+            try:
+                mkdir("./temp")
+            except FileExistsError:
+                raise FileNotFoundError("Something went wrong until the input saving")
+            else:
+                async with aiofiles.open(path, encoding='utf-8', mode='w') as f:
+                    await f.write(code.decode('utf-8'))
+        finally:
+            return random_id

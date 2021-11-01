@@ -40,12 +40,10 @@ async def check_user_answer(
     else:
         expected_answer = expected_answer.decode('utf-8')
     # Save user input
-    random_id = await FileUtils.save_user_answer(
-        task_id=task_id, theme_id=theme_id, code=await file.read(), extension=extension
-    )
+    temp_name = await FileUtils.get_user_answer_temp(code=await file.read())
     # Run user input into the Docker container
     user_answer = await DockerUtils.docker_check_user_answer(
-        theme_name, theme_id, task_id, random_id, extension
+        theme_name, task_id, temp_name
     )
     # Check container's stdout
     if not user_answer:

@@ -1,6 +1,7 @@
 """
 The `docker_scripts` module stores utilities for creating and maintaining disposable containers. 
 """
+from random import randint
 from os import remove
 from os.path import isfile
 from typing import Tuple
@@ -18,29 +19,28 @@ class DockerUtils:
     try:
         client = from_env()
     except DockerException as e:
-        print("Error accessing the docker API. Is the Docker running?", e, sep="\n")
+        raise DockerException("Error accessing the Docker API. Is Docker running?") from e
 
     @classmethod
     async def _docker_image_build(
-            cls: 'DockerUtils', theme_name: str, theme_id: int,
-            task_id: int, random_id: int, extension: str
+            cls: 'DockerUtils', theme_name: str, task_id: int, temp_name: str
     ) -> Tuple[Image, str] or None:
         """
         `DockerUtils._docker_image_build` private class method
         returns an image for the check container.
         """
-        user_input_name = f"task_{theme_id}_{task_id}_{random_id}.{extension}"
-        user_input_path = f"./temp/{user_input_name}"
+        user_input_path = f"./temp/{temp_name}"
         dockerfile = f'''
-                    FROM python:3.9-alpine
-                    ADD {user_input_path} ./materials/{theme_name}/input/task_{task_id}.txt /
-                    CMD cat task_{task_id}.txt | python -u {user_input_name}
-                    '''
+        FROM python:3.9-alpine
+        COPY {user_input_path} ./materials/{theme_name}/input/task_{task_id}.txt /
+        CMD cat task_{task_id}.txt | python -u {temp_name}
+        '''
+        image_config = {
+            'path': '.', 'dockerfile': dockerfile, 'forcerm': True,
+            'network_mode': None, 'nocache': True
+        }
         try:
-            image = cls.client.images.build(
-                path='.', dockerfile=dockerfile, nocache=True, rm=True,
-                forcerm=True, tag=f'task_{theme_name}_{task_id}_{random_id}'
-            )[0]
+            image = cls.client.images.build(**image_config)[0]
         except BuildError as e:
             print("Failed to build the Docker image.", e)
             return None
@@ -49,26 +49,29 @@ class DockerUtils:
 
     @classmethod
     async def _docker_container_run(
-            cls: 'DockerUtils', image: Image, theme_name: str, task_id: int, random_id: int
+            cls: 'DockerUtils', image: Image, theme_name: str, task_id: int, random_id: str
     ) -> str:
         """
         `DockerUtils._docker_container_run` private class method requires a Docker-image
         and returns the result of executing user input in the container.
         """
         answer = ""
+        container_config = {
+            'detach': True, 'auto_remove': True,
+            'stderr': True, 'read_only': True,
+            'device_read_iops': 0, 'device_write_iops': 0,
+            'name': f'task_{theme_name}_{task_id}_{random_id}'
+        }
         try:
-            container = cls.client.containers.run(
-                image, detach=True, auto_remove=True,
-                name=f'task_{theme_name}_{task_id}_{random_id}'
-            )
+            container = cls.client.containers.run(image, **container_config)
         except ContainerError as e:
-            print("Failed to run container:", e)
+            raise DockerException("Failed to run container:") from e
         except ImageNotFound as e:
-            print("Failed to find image:", e)
+            raise DockerException("Failed to find image:") from e
         except NotFound as e:
-            print("File not found in the container:", e)
+            raise DockerException("File not found in the container:") from e
         except APIError as e:
-            print("Unhandled error:", e)
+            raise DockerException("Unhandled Docker API error:") from e
         else:
             for line in container.logs(stream=True):
                 answer += line.decode('utf-8').strip()
@@ -78,15 +81,15 @@ class DockerUtils:
 
     @classmethod
     async def docker_check_user_answer(
-            cls: 'DockerUtils', theme_name: str, theme_id: int,
-            task_id: int, random_id: int, extension: str
+            cls: 'DockerUtils', theme_name: str, task_id: int, temp_name: str
     ) -> str:
         """
         `DockerUtils.docker_check_user_answer` class method is a public interface method,
         returns the result of executing user input in the container.
         """
+        random_id = randint(0, 100)
         image, user_input_path = await cls._docker_image_build(
-            theme_name, theme_id, task_id, random_id, extension
+            theme_name, task_id, temp_name
         )
         answer = await cls._docker_container_run(image, theme_name, task_id, random_id)
         remove(user_input_path) if isfile(user_input_path) else None
