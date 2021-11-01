@@ -36,8 +36,7 @@ class DockerUtils:
         CMD cat task_{task_id}.txt | python -u {temp_name}
         '''
         image_config = {
-            'path': '.', 'dockerfile': dockerfile, 'forcerm': True,
-            'network_mode': None, 'nocache': True
+            'path': '.', 'dockerfile': dockerfile, 'forcerm': True, 'network_mode': None
         }
         try:
             image = cls.client.images.build(**image_config)[0]
