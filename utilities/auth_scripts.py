@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from schemas.auth import UserInDB, User, TokenData
-from schemas.errors import InactiveUser, EmailAlreadyTaken
+from schemas.errors import InactiveUser, NoUserEmail
 from database.config import database
 
 
@@ -25,7 +25,7 @@ class AuthUtils:
         query = "SELECT * FROM users WHERE email = :email"
         user = await database.fetch_one(query=query, values={"email": email})
         if not user:
-            raise HTTPException(status_code=400, detail=EmailAlreadyTaken.error)
+            raise HTTPException(status_code=400, detail=NoUserEmail().error)
         return UserInDB(**user)
 
     @classmethod

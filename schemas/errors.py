@@ -30,3 +30,7 @@ class InactiveUser(BaseModel):
 
 class EmailAlreadyTaken(BaseModel):
     error: str = "Email already registered"
+
+
+class NoUserEmail(BaseModel):
+    error: str = "There is no user who have already registered with this email address."
