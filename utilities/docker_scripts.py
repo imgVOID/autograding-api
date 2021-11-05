@@ -23,7 +23,7 @@ class DockerUtils:
 
     @classmethod
     async def _docker_image_build(
-            cls: 'DockerUtils', theme_name: str, task_id: int, temp_name: str
+            cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str
     ) -> Tuple[Image, str] or None:
         """
         `DockerUtils._docker_image_build` private class method
@@ -32,7 +32,7 @@ class DockerUtils:
         user_input_path = f"./temp/{temp_name}"
         dockerfile = f'''
         FROM python:3.9-alpine
-        COPY {user_input_path} ./materials/{theme_name}/input/task_{task_id}.txt /
+        COPY {user_input_path} ./materials/{topic_name}/input/task_{task_id}.txt /
         CMD cat task_{task_id}.txt | python -u {temp_name}
         '''
         image_config = {
@@ -48,7 +48,7 @@ class DockerUtils:
 
     @classmethod
     async def _docker_container_run(
-            cls: 'DockerUtils', image: Image, theme_name: str, task_id: int, random_id: str
+            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, random_id: int
     ) -> str:
         """
         `DockerUtils._docker_container_run` private class method requires a Docker-image
@@ -59,7 +59,7 @@ class DockerUtils:
             'detach': True, 'auto_remove': True,
             'stderr': True, 'read_only': True,
             'device_read_iops': 0, 'device_write_iops': 0,
-            'name': f'task_{theme_name}_{task_id}_{random_id}'
+            'name': f'task_{topic_name}_{task_id}_{random_id}'
         }
         try:
             container = cls.client.containers.run(image, **container_config)
@@ -80,17 +80,17 @@ class DockerUtils:
 
     @classmethod
     async def docker_check_user_answer(
-            cls: 'DockerUtils', theme_name: str, task_id: int, temp_name: str
+            cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str
     ) -> str:
         """
         `DockerUtils.docker_check_user_answer` class method is a public interface method,
-        returns the result of executing user input in the container.
+        returns the result of executing user input in the Docker container.
         """
         random_id = randint(0, 100)
         image, user_input_path = await cls._docker_image_build(
-            theme_name, task_id, temp_name
+            topic_name, task_id, temp_name
         )
-        answer = await cls._docker_container_run(image, theme_name, task_id, random_id)
+        answer = await cls._docker_container_run(image, topic_name, task_id, random_id)
         remove(user_input_path) if isfile(user_input_path) else None
         return answer
 
