@@ -8,16 +8,16 @@ class TestCheck(TestAuthMixin):
     @pytest.mark.asyncio
     async def test_check_not_found(self):
         async with AsyncClient(app=app, base_url="http://test") as ac:
-            response_theme = await ac.post(
+            response_topic = await ac.post(
                 f"api/checks/999/999", files={'file': b""}, headers=self.headers
             )
         async with AsyncClient(app=app, base_url="http://test") as ac:
             response_task = await ac.post(
                 f"api/checks/0/999", files={'file': b""}, headers=self.headers
             )
-        assert response_theme.status_code == 404
+        assert response_topic.status_code == 404
         assert response_task.status_code == 404
-        assert response_theme.json() == {'detail': 'Topic not found by ID'}
+        assert response_topic.json() == {'detail': 'Topic not found by ID'}
         assert response_task.json() == {'detail': 'Task not found by ID'}
 
     @pytest.mark.asyncio
