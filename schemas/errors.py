@@ -8,10 +8,6 @@ class NotFoundTask(BaseModel):
     error: str = "Task not found by ID"
 
 
-class NotFoundTheme(BaseModel):
-    error: str = "Theme not found by ID"
-
-
 class NotFoundTopic(BaseModel):
     error: str = "Topic not found by ID"
 
