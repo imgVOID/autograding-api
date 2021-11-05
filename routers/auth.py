@@ -13,13 +13,13 @@ router_users = APIRouter(
 
 
 @router_users.get("/", response_model=List[User], summary="Read users index")
-async def read_users():
+async def read_users(current_user: User = Depends(get_current_active_user)):
     query = "SELECT * FROM users"
     return await database.fetch_all(query)
 
 
 @router_users.get("/{user_id}/", response_model=User, summary="Read user information by ID")
-async def read_user_by_id(user_id: int):
+async def read_user_by_id(user_id: int, current_user: User = Depends(get_current_active_user)):
     query = "SELECT * FROM users WHERE id = :id"
     return await database.fetch_one(query=query, values={"id": user_id})
 
@@ -30,7 +30,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 
 @router_users.post("/", response_model=User, summary="Create new user")
-async def create_user(user: UserCreate):
+async def create_user(user: UserCreate, current_user: User = Depends(get_current_active_user)):
     query = "SELECT * FROM users WHERE email = :email"
     if await database.fetch_one(query=query, values={"email": user.email}):
         raise HTTPException(status_code=400, detail="Email already registered")

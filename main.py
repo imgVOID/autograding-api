@@ -5,10 +5,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from routers import limiter
 from routers.tasks import router_tasks
-from routers.check import router_check
-from routers.themes import router_themes
+from routers.checks import router_checks, limiter
+from routers.topics import router_topic
 from routers.auth import router_users
 from database.config import database
 from schemas.auth import Token
@@ -37,8 +36,8 @@ DockerUtils.fix_docker_bug()
 
 # Connecting routers to the app
 app.include_router(router_tasks)
-app.include_router(router_check)
-app.include_router(router_themes)
+app.include_router(router_checks)
+app.include_router(router_topic)
 app.include_router(router_users)
 # Connecting rate limiter to the app
 app.state.limiter = limiter

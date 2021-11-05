@@ -12,6 +12,10 @@ class NotFoundTheme(BaseModel):
     error: str = "Theme not found by ID"
 
 
+class NotFoundTopic(BaseModel):
+    error: str = "Topic not found by ID"
+
+
 class RateLimitExceeded(BaseModel):
     error: str = "Rate limit exceeded: 2 per 1 minute"
 

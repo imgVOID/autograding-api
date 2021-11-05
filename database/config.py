@@ -1,6 +1,5 @@
 import sqlalchemy
 from databases import Database
-from sqlalchemy.orm import sessionmaker
 from .models import metadata
 
 # SQLAlchemy specific code, as with any other app

@@ -1,21 +1,26 @@
-from fastapi import File, UploadFile, APIRouter, HTTPException
+from fastapi import File, UploadFile, APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse, Response
 from fastapi.requests import Request
-from routers import limiter
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from schemas.errors import NotFoundTask, NotFoundTopic, RateLimitExceeded, DockerUnavailable
+from schemas.checks import CheckResult
+from schemas.auth import User
 from utilities.docker_scripts import DockerUtils
 from utilities.file_scripts import FileUtils
-from schemas.errors import NotFoundTask, NotFoundTheme, RateLimitExceeded, DockerUnavailable
-from schemas.check import CheckResult
+from utilities.auth_scripts import get_current_active_user
 
-router_check = APIRouter(
+router_checks = APIRouter(
     redirect_slashes=False,
-    prefix="/api/check",
-    tags=["check"],
+    prefix="/api/checks",
+    tags=["checks"],
 )
 
+limiter = Limiter(key_func=get_remote_address)
 
-@router_check.post(
-    "/{theme_id}/{task_id}", status_code=200, summary="Check user's answer",
+
+@router_checks.post(
+    "/{topic_id}/{task_id}", status_code=200, summary="Check user's answer",
     response_model=CheckResult, responses={
         404: {"model": NotFoundTask}, 429: {"model": RateLimitExceeded},
         503: {"model": DockerUnavailable}
@@ -23,18 +28,18 @@ router_check = APIRouter(
 )
 @limiter.limit("2/minute")
 async def check_user_answer(
-        request: Request, response: Response, theme_id: int, task_id: int,
-        extension: str = 'txt', file: UploadFile = File(...)
+        request: Request, response: Response, topic_id: int, task_id: int,
+        file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)
 ) -> CheckResult or JSONResponse:
-    # Get theme name
-    theme_index = await FileUtils.open_file("theme_index")
+    # Get topic name
+    topic_index = await FileUtils.open_file("topic_index")
     try:
-        theme_name = theme_index[theme_id].get('path')
+        topic_name = topic_index[topic_id].get('path')
     except IndexError or AttributeError:
-        raise HTTPException(status_code=404, detail=NotFoundTheme().error)
+        raise HTTPException(status_code=404, detail=NotFoundTopic().error)
     # Get expected output
     try:
-        expected_answer = await FileUtils.open_file("task_output", theme_id, task_id)
+        expected_answer = await FileUtils.open_file("task_output", topic_id, task_id)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=NotFoundTask().error)
     else:
@@ -43,7 +48,7 @@ async def check_user_answer(
     temp_name = await FileUtils.get_user_answer_temp(code=await file.read())
     # Run user input into the Docker container
     user_answer = await DockerUtils.docker_check_user_answer(
-        theme_name, task_id, temp_name
+        topic_name, task_id, temp_name
     )
     # Check container's stdout
     if not user_answer:

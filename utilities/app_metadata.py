@@ -7,17 +7,17 @@ tags_metadata = [
         "description": "Application area-wide settings",
     },
     {
-        "name": "check",
-        "description": "Checking if the user's answer is correct: "
-                       "running the code safely in a Docker container and comparing the result"
-    },
-    {
         "name": "tasks",
         "description": "Task management with description, solution code, input and output data",
     },
     {
-        "name": "themes",
-        "description": "Theme management with description and task list"
+        "name": "topics",
+        "description": "Topic management with description and task list"
+    },
+    {
+        "name": "checks",
+        "description": "Checking if the user's answer is correct: "
+                       "running the code safely in a Docker container and comparing the result"
     },
     {
         "name": "users",
@@ -32,8 +32,8 @@ app_metadata_description = """
 3. *Fully RESTful (CRUD) API for use with a custom frontend.*\n
 4. *Authentication based on Bearer JWT.*\n
 5. *Support for asynchronous ORM SQLAlchemy.*\n
-* **check**: validating user input by running securely in a disposable Docker container. 
 * **tasks**: CRUD for the programming assignments management.
-* **themes**: CRUD for the tasks topics management.
+* **topics**: CRUD for the tasks topics management.
+* **checks**: validating user input by running securely in a disposable Docker container. 
 * **users**: user management system.
 """

@@ -9,7 +9,7 @@ class Task(BaseModel):
     for getting a full task info via GET requests.
     """
     id: int
-    theme_id: int
+    topic_id: int
     title: str
     description: list[str]
     input: list[str]
@@ -19,7 +19,7 @@ class Task(BaseModel):
         schema_extra = {
             "example": {
                 "id": 0,
-                "theme_id": 0,
+                "topic_id": 0,
                 "title": "string",
                 "description": ["Task's essence.",
                                 "Separated by a newline."],
@@ -52,7 +52,6 @@ class TaskCreate(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "theme_id": 0,
                 "title": "string",
                 "description": ["Task's essence.",
                                 "Separated by a newline."],
