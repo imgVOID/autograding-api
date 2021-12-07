@@ -1,11 +1,11 @@
 """
 The `docker_scripts` module stores utilities for creating and maintaining disposable containers. 
 """
-from random import randint
-import subprocess
 from os import remove
 from os.path import isfile
-from typing import Tuple
+from typing import Tuple, Optional
+from subprocess import Popen, PIPE
+from random import randint
 from docker import from_env
 from docker.api import build
 from docker.models.images import Image
@@ -33,7 +33,6 @@ class DockerUtils:
         user_input_path = f"./temp/{temp_name}"
         dockerfile = f'''
         FROM python:3.9-alpine
-        ENV ANSWER="mark"
         COPY {user_input_path} ./materials/{topic_name}/input/task_{task_id}.txt /
         CMD cat task_{task_id}.txt | python -u {temp_name}
         '''
@@ -50,7 +49,7 @@ class DockerUtils:
 
     @classmethod
     async def _docker_container_run(
-            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, random_id: int
+            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
     ) -> str:
         """
         `DockerUtils._docker_container_run` private class method requires a Docker-image
@@ -61,7 +60,7 @@ class DockerUtils:
             'detach': True, 'auto_remove': True,
             'stderr': True, 'read_only': True,
             'device_read_iops': 0, 'device_write_iops': 0,
-            'name': f'task_{topic_name}_{task_id}_{random_id}'
+            'name': f'task_{topic_name}_{task_id}_{id_random}'
         }
         try:
             container = cls.client.containers.run(image, **container_config)
@@ -82,15 +81,15 @@ class DockerUtils:
 
     @classmethod
     async def _docker_container_run_subprocess(
-            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, random_id: int
+            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
     ) -> str:
         """
         `DockerUtils._docker_container_run` private class method requires a Docker-image
         and returns the result of executing user input in the container.
         """
-        cmd = f'docker run --rm --read-only --name task_{topic_name.lower()}_{task_id}_{random_id} {image.id}'
+        cmd = f'docker run --rm --read-only --name task_{topic_name.lower()}_{task_id}_{id_random} {image.id}'
         try:
-            container = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            container = Popen(cmd, stdout=PIPE, stderr=PIPE)
         except ContainerError as e:
             raise DockerException("Failed to run container:") from e
         except ImageNotFound as e:
@@ -107,16 +106,19 @@ class DockerUtils:
     @classmethod
     async def docker_check_user_answer(
             cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str
-    ) -> str:
+    ) -> Optional[str]:
         """
         `DockerUtils.docker_check_user_answer` class method is a public interface method,
         returns the result of executing user input in the Docker container.
         """
-        random_id = randint(0, 100)
+        id_random = randint(0, 100)
         image, user_input_path = await cls._docker_image_build(
             topic_name, task_id, temp_name
         )
-        answer = await cls._docker_container_run_subprocess(image, topic_name, task_id, random_id)
+        if not image:
+            return None
+
+        answer = await cls._docker_container_run_subprocess(image, topic_name, task_id, id_random)
         cls.client.images.remove(image.id, force=True)
         remove(user_input_path) if isfile(user_input_path) else None
         return answer
