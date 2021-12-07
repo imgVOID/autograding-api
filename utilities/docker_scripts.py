@@ -2,6 +2,7 @@
 The `docker_scripts` module stores utilities for creating and maintaining disposable containers. 
 """
 from random import randint
+import subprocess
 from os import remove
 from os.path import isfile
 from typing import Tuple
@@ -32,6 +33,7 @@ class DockerUtils:
         user_input_path = f"./temp/{temp_name}"
         dockerfile = f'''
         FROM python:3.9-alpine
+        ENV ANSWER="mark"
         COPY {user_input_path} ./materials/{topic_name}/input/task_{task_id}.txt /
         CMD cat task_{task_id}.txt | python -u {temp_name}
         '''
@@ -79,6 +81,30 @@ class DockerUtils:
             return answer
 
     @classmethod
+    async def _docker_container_run_subprocess(
+            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, random_id: int
+    ) -> str:
+        """
+        `DockerUtils._docker_container_run` private class method requires a Docker-image
+        and returns the result of executing user input in the container.
+        """
+        cmd = f'docker run --rm --read-only --name task_{topic_name.lower()}_{task_id}_{random_id} {image.id}'
+        try:
+            container = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except ContainerError as e:
+            raise DockerException("Failed to run container:") from e
+        except ImageNotFound as e:
+            raise DockerException("Failed to find image:") from e
+        except NotFound as e:
+            raise DockerException("File not found in the container:") from e
+        except APIError as e:
+            raise DockerException("Unhandled Docker API error:") from e
+        else:
+            container.wait()
+            answer = b"".join(container.stdout.readlines())
+            return answer.decode("utf-8")
+
+    @classmethod
     async def docker_check_user_answer(
             cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str
     ) -> str:
@@ -90,7 +116,8 @@ class DockerUtils:
         image, user_input_path = await cls._docker_image_build(
             topic_name, task_id, temp_name
         )
-        answer = await cls._docker_container_run(image, topic_name, task_id, random_id)
+        answer = await cls._docker_container_run_subprocess(image, topic_name, task_id, random_id)
+        cls.client.images.remove(image.id, force=True)
         remove(user_input_path) if isfile(user_input_path) else None
         return answer
 
