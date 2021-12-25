@@ -10,6 +10,7 @@ from docker import from_env
 from docker.api import build
 from docker.models.images import Image
 from docker.errors import DockerException, ContainerError, NotFound, ImageNotFound, APIError, BuildError
+from python_on_whales import docker as whale
 
 
 class DockerUtils:
@@ -23,8 +24,8 @@ class DockerUtils:
         raise DockerException("Error accessing the Docker API. Is Docker running?") from e
 
     @classmethod
-    async def _docker_image_build(
-            cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str
+    async def _image_build(
+            cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str, id_random
     ) -> Tuple[Image, str] or None:
         """
         `DockerUtils._docker_image_build` private class method
@@ -32,12 +33,15 @@ class DockerUtils:
         """
         user_input_path = f"./temp/{temp_name}"
         dockerfile = f'''
-        FROM python:3.9-alpine
-        COPY {user_input_path} ./materials/{topic_name}/input/task_{task_id}.txt /
-        CMD cat task_{task_id}.txt | python -u {temp_name}
-        '''
+            FROM python:3.9-alpine
+            LABEL type=check
+            WORKDIR /
+            COPY {user_input_path} ./materials/{topic_name}/input/task_{task_id}.txt /
+            CMD cat task_{task_id}.txt | python -u {temp_name}
+            '''
         image_config = {
-            'path': '.', 'dockerfile': dockerfile, 'forcerm': True, 'network_mode': None
+            'path': '.', 'dockerfile': dockerfile, 'forcerm': True, 'network_mode': None,
+            'tag': f'{topic_name.lower()}_{str(task_id)}_{str(id_random)}'
         }
         try:
             image = cls.client.images.build(**image_config)[0]
@@ -48,7 +52,7 @@ class DockerUtils:
             return image, user_input_path
 
     @classmethod
-    async def _docker_container_run(
+    async def _container_run_sdk(
             cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
     ) -> str:
         """
@@ -76,11 +80,10 @@ class DockerUtils:
             for line in container.logs(stream=True):
                 answer += line.decode('utf-8').strip()
         finally:
-            cls.client.images.remove(image.id, force=True)
-            return answer
+            return answer.strip()
 
     @classmethod
-    async def _docker_container_run_subprocess(
+    async def _container_run_process(
             cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
     ) -> str:
         """
@@ -101,27 +104,65 @@ class DockerUtils:
         else:
             container.wait()
             answer = b"".join(container.stdout.readlines())
-            return answer.decode("utf-8")
+            return answer.decode("utf-8").strip()
+
+    @classmethod
+    async def _container_run_whale(
+            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
+    ) -> str:
+        """
+        `DockerUtils._docker_container_run` private class method requires a Docker-image
+        and returns the result of executing user input in the container.
+        """
+        config = {
+            "image": image.id,
+            "name": f'task_{topic_name.lower()}_{task_id}_{id_random}',
+        }
+        try:
+            with whale.run(**config, detach=True) as container:
+                output = container.logs()
+        except ContainerError as e:
+            raise DockerException("Failed to run container:") from e
+        else:
+            whale.image.remove(image.id, force=True)
+            return output.strip()
 
     @classmethod
     async def docker_check_user_answer(
             cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str
-    ) -> Optional[str]:
+    ) -> Optional[Tuple[str, int]]:
         """
         `DockerUtils.docker_check_user_answer` class method is a public interface method,
         returns the result of executing user input in the Docker container.
         """
         id_random = randint(0, 100)
-        image, user_input_path = await cls._docker_image_build(
-            topic_name, task_id, temp_name
+        image, user_input_path = await cls._image_build(
+            topic_name, task_id, temp_name, id_random
         )
-        if not image:
-            return None
+        # return (await cls._container_run_sdk(image, topic_name, task_id, id_random), id_random) if image else None
+        return (await cls._container_run_process(image, topic_name, task_id, id_random), id_random) if image else None
+        # return (await cls._container_run_whale(image, topic_name, task_id, id_random), id_random) if image else None
 
-        answer = await cls._docker_container_run_subprocess(image, topic_name, task_id, id_random)
-        cls.client.images.remove(image.id, force=True)
-        remove(user_input_path) if isfile(user_input_path) else None
-        return answer
+    @classmethod
+    async def image_remove(
+            cls: 'DockerUtils', topic_name: str, task_id: int, mode: str
+    ) -> None:
+        async def sdk():
+            tag = f"{topic_name.lower()}_{str(task_id)}"
+            return cls.client.images.remove(tag, force=True)
+
+        async def process():
+            Popen(f'docker image prune -a --force --filter "label=type=check"')
+
+        modes = {
+            'sdk': sdk, 'process': process, 'whale': None
+        }
+        try:
+            await modes[mode]()
+        except TypeError:
+            pass
+        except KeyError as e:
+            raise ValueError("You need to specify the mode: 'whale', 'sdk', 'processing'") from e
 
     @staticmethod
     def fix_docker_bug() -> None:

@@ -2,11 +2,9 @@
 `file_scripts` module stores tasks I/O utilities.
 """
 import aiofiles
-from tempfile import gettempdir
-from os import remove, mkdir
-from os.path import abspath, join, normpath, dirname
+from aiofiles.os import remove, mkdir
+from os.path import abspath, join, normpath, isfile
 from json import loads, dumps
-from random import randint
 from typing import List, Iterable
 
 
@@ -180,7 +178,7 @@ class FileUtils:
         """
         path = await cls._get_filepath(title, topic_id, task_id)
         try:
-            remove(path)
+            await remove(path)
         except OSError as e:
             raise FileNotFoundError(f'File path can not be removed: {path}') from e
 
@@ -197,38 +195,13 @@ class FileUtils:
             return await cls._write_user_answer_temp(code)
         except FileNotFoundError:
             try:
-                mkdir("./temp")
+                await mkdir("./temp")
             except Exception as e:
                 raise FileNotFoundError("Something went wrong until the input saving") from e
             else:
                 return await cls._write_user_answer_temp(code)
 
-    @classmethod
-    async def get_user_answer_file(
-            cls: 'FileUtils', topic_id: int, task_id: int, code: bytes, extension: str
-    ) -> int:
-        """
-        `FileUtils.save_user_input` public class method saves user input on a disk.
-        It returns the name of a file uploaded by the user, and a random number.
-        It takes three parameters (excluding cls):
-        1. `code` is the bytes object with the user input untrusted code.
-        2. `topic_id` means an id of the topic and the directory name.
-        3. `task_id` means an id of the task in a topic and a part of the file name.
-        """
-        random_id = randint(0, 100000)
-        path = abspath(normpath(join(
-            'temp', f'task_{topic_id}_{task_id}_{random_id}.{extension}'
-        )))
-        try:
-            async with aiofiles.open(path, encoding='utf-8', mode='w') as f:
-                await f.write(code.decode('utf-8'))
-        except FileNotFoundError:
-            try:
-                mkdir("./temp")
-            except FileExistsError:
-                raise FileNotFoundError("Something went wrong until the input saving")
-            else:
-                async with aiofiles.open(path, encoding='utf-8', mode='w') as f:
-                    await f.write(code.decode('utf-8'))
-        finally:
-            return random_id
+    @staticmethod
+    async def remove_user_answer_file(temp_name: str) -> None:
+        user_input_path = f"./temp/{temp_name}"
+        await remove(user_input_path) if isfile(user_input_path) else None

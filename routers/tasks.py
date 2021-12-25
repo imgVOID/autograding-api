@@ -1,4 +1,4 @@
-from fastapi import status, File, UploadFile, APIRouter, HTTPException, Depends
+from fastapi import status, File, UploadFile, APIRouter, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
 from fastapi.encoders import jsonable_encoder
 from schemas.tasks import Task, TaskUpdate, TaskCreate
@@ -38,8 +38,8 @@ async def read_task(topic_id: int, task_id: int) -> Task or JSONResponse:
     response_model=Task, responses={404: {"model": NotFoundTopic}}
 )
 async def create_task(
-        topic_id: int, task: TaskCreate or UploadFile, code: UploadFile = File(...),
-        current_user: User = Depends(get_current_active_user)
+        topic_id: int, task: TaskCreate or UploadFile, background_tasks: BackgroundTasks,
+        code: UploadFile = File(...), current_user: User = Depends(get_current_active_user)
 ) -> Task or JSONResponse:
     """The `create task` CRUD endpoint."""
     # If this is a test mode, the actual data will be protected from changes.
@@ -58,25 +58,20 @@ async def create_task(
     # New task's info dictionary
     task_description = {key: value for key, value in task
                         if key in ("id", "topic_id", "title", "description")}
+    saving_config = {
+        "topic_id": topic_id, "task_id": task.id
+    }
     # Save task info
-    await FileUtils.save_file(
-        'task_info', content=task_description, topic_id=topic_id, task_id=task.id
-    )
+    background_tasks.add_task(FileUtils.save_file, 'task_info', content=task_description, **saving_config)
     # Save task's input values
-    await FileUtils.save_file_values(
-        "task_input", content=task.input, topic_id=topic_id, task_id=task.id
-    )
+    background_tasks.add_task(FileUtils.save_file_values, "task_input", content=task.input, **saving_config)
     # Save task code's output values
-    await FileUtils.save_file_values(
-        "task_output", content=task.output, topic_id=topic_id, task_id=task.id
-    )
+    background_tasks.add_task(FileUtils.save_file_values, "task_output", content=task.output, **saving_config)
     # Save task's code
-    await FileUtils.save_file(
-        "task_code", content=await code.read(), topic_id=topic_id, task_id=task.id
-    )
+    background_tasks.add_task(FileUtils.save_file, "task_code", content=await code.read(), **saving_config)
     # Update the topic tasks count
     topics_json[topic_id]["count"] = task_id
-    await FileUtils.save_file('topic_index', content=topics_json)
+    background_tasks.add_task(FileUtils.save_file, 'topic_index', content=topics_json)
     return task
 
 
@@ -86,74 +81,58 @@ async def create_task(
     responses={404: {"model": NotFoundTask}}
 )
 async def update_task(
-        topic_id: int, task_id: int, task: TaskUpdate, code: UploadFile = File(None),
-        current_user: User = Depends(get_current_active_user)
+        topic_id: int, task_id: int, task: TaskUpdate, background: BackgroundTasks,
+        code: UploadFile = File(None), current_user: User = Depends(get_current_active_user)
 ) -> Task or JSONResponse:
     """The `update task` CRUD endpoint.\n
     You can update description, code, inputs and outputs,
     one at a time, or all at once.\n
     Please uncheck "Send empty value" in Swagger UI!
     """
-    if isinstance(task, UploadFile):
-        task = TaskUpdate(**jsonable_encoder(task))
-    task.topic_id = topic_id
-    task.id = task_id
-    task_update = jsonable_encoder(task)
-    new_task_info = (
-        task_update.get("title"), task_update.get("description"),
-        task_update.get("input"), task_update.get("output"),
-        await code.read()
-    )
-    # Check if there was an empty request
-    if not any(new_task_info):
+    if not any(task.dict().values()):
         raise HTTPException(status_code=422, detail=EmptyRequest().error)
+
+    saving_config = {"topic_id": topic_id, "task_id": task_id}
+    code = await code.read()
+    task = TaskUpdate(**jsonable_encoder(task))
+    task.id = task_id
+    task.topic_id = topic_id
+
     # Update task's description
-    if any(new_task_info[0:2]):
+    if any([task.title, task.description]):
         try:
             # Get task info
-            task_info = await FileUtils.open_file(
-                "task_info", topic_id=topic_id, task_id=task_id
-            )
+            task_info = await FileUtils.open_file("task_info", **saving_config)
         except FileNotFoundError:
             raise HTTPException(status_code=404, detail=NotFoundTask().error)
         except IndexError:
             raise HTTPException(status_code=404, detail=NotFoundTopic().error)
         else:
-            task_info["title"] = new_task_info[0] if new_task_info[0] else task_info["title"]
-            task_info["description"] = new_task_info[1] if new_task_info[1] else task_info["description"]
-            # Save task info
-            await FileUtils.save_file(
-                "task_info", content=task_info, topic_id=task.topic_id, task_id=task.id
-            )
+            # Update task's description
+            task_info["title"] = task.title if task.title else task_info["title"]
+            task_info["description"] = task.description if task.description else task_info["description"]
+            background.add_task(FileUtils.save_file, "task_info", content=task_info, **saving_config)
     # Update task's input values
-    if new_task_info[2]:
+    if task.input:
         try:
-            await FileUtils.save_file_values(
-                "task_input", content=task_update.get("input"),
-                topic_id=topic_id, task_id=task.id,
-            )
+            background.add_task(FileUtils.save_file_values, "task_input", content=task.input, **saving_config)
         except FileNotFoundError:
             raise HTTPException(status_code=404, detail=NotFoundTask().error)
     # Update task answer's output values
-    if new_task_info[3]:
+    if task.output:
         try:
-            await FileUtils.save_file_values(
-                "task_output", content=task_update.get("output"),
-                topic_id=topic_id, task_id=task.id,
-            )
+            background.add_task(FileUtils.save_file_values, "task_output", content=task.output, **saving_config)
         except FileNotFoundError:
             raise HTTPException(status_code=404, detail=NotFoundTask().error)
     # Update task's code file
-    if new_task_info[4]:
+    if code:
         try:
-            await FileUtils.save_file(
-                "task_code", content=new_task_info[4], topic_id=topic_id, task_id=task.id
-            )
+            background.add_task(FileUtils.save_file, "task_code", content=code, **saving_config)
         except IndexError:
             raise HTTPException(status_code=404, detail=NotFoundTopic().error)
         except FileNotFoundError:
             raise HTTPException(status_code=404, detail=NotFoundTask().error)
-    return Task(task_id=task.id, **task_update)
+    return Task(task_id=task.id, **task.dict())
 
 
 @router_tasks.delete(
@@ -161,7 +140,8 @@ async def update_task(
     responses={404: {"model": NotFoundTask}}
 )
 async def delete_task(
-        task_id: int, topic_id: int, current_user: User = Depends(get_current_active_user)
+        task_id: int, topic_id: int, background: BackgroundTasks,
+        current_user: User = Depends(get_current_active_user)
 ) -> Response or JSONResponse:
     """The `delete task` CRUD endpoint."""
     files = ("task_info", "task_input", "task_output", "task_code")
@@ -176,5 +156,5 @@ async def delete_task(
     topics = await FileUtils.open_file('topic_index')
     # Update the topic tasks count
     topics[topic_id]["count"] -= 1
-    await FileUtils.save_file('topic_index', content=topics, topic_id=topic_id, task_id=task_id)
+    background.add_task(FileUtils.save_file, "topic_index", content=topics, topic_id=topic_id, task_id=task_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
