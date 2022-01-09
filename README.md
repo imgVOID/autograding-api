@@ -10,3 +10,21 @@
 * **topics**: CRUD for the tasks topics management.
 * **checks**: validating user input by running securely in a disposable Docker container. 
 * **users**: user management system.
+
+## Requirements:
+1. FastAPI.
+2. Python Docker SDK (optional).
+3. Python on Whales (optional).
+4. Pydantic.
+5. Aiofiles.
+6. Pytest and pytest-asyncio.
+7. Uvicorn.
+8. Databases (Python module).
+9. Httpx
+10. Python-jose
+11. Passlib
+12. Slowapi (optional).
+
+## TODOs:
+1. Finish the "topics" section by analogy with the "tasks" section
+2. Improve the sandboxing algorithm using Docker volumes or Docker bind mounts.
