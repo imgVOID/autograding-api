@@ -13,8 +13,20 @@ class TestAuthMixin:
                   mode='r', encoding='utf-8') as f:
             example_user = loads(f.read())
             response = client.post(f"/auth/token", data={
-                'username': example_user['email'], 'password': example_user['password'],
+                'grant_type': '',
+                'username': example_user['email'],
+                'password': example_user['password'],
+                'scope': '',
+                'client_id': '',
+                'client_secret': ''
+            }, headers={
+                'accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
             })
+
         cls.client = client
         cls.tasks_count = None
-        cls.headers = {"Authorization": f"Bearer {response.json()['access_token']}"}
+        try:
+            cls.headers = {"Authorization": f"Bearer {response.json()['access_token']}"}
+        except KeyError as e:
+            raise ValueError("There is no user who have already registered with this email address.") from e
