@@ -1,11 +1,8 @@
 # Autograding API
-
+🚀 Fast and asynchronous API for **automated grading of code assignments.**
 
 [![Gitter](https://badges.gitter.im/python-autograding-api/community.svg)](https://gitter.im/python-autograding-api/community)
 [![Open Source Helpers](https://www.codetriage.com/imgvoid/autograding-api/badges/users.svg)](https://www.codetriage.com/imgvoid/python-autograding-api)
-
-
-🚀 Fast and asynchronous API for **automated grading of code assignments.**
 
 1. *FastAPI provides support for OpenAPI 3.0 and Swagger.*
 2. *Separate disposable Docker containers to inspect and grade potentially unsafe user input.*
