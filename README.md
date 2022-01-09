@@ -20,9 +20,9 @@
 6. Pytest and pytest-asyncio.
 7. Uvicorn.
 8. Databases (Python module).
-9. Httpx
-10. Python-jose
-11. Passlib
+9. Httpx.
+10. Python-jose.
+11. Passlib.
 12. Slowapi (optional).
 
 ## TODOs:
