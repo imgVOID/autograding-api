@@ -30,5 +30,5 @@
 12. Slowapi (optional).
 
 ## TODOs:
-1. Finish the "topics" section by analogy with the "tasks" section
+1. Finish the "topics" section by analogy with the "tasks" section.
 2. Improve the sandboxing algorithm using Docker volumes or Docker bind mounts.
