@@ -10,6 +10,8 @@
 4. *Fully RESTful (CRUD) API for use with a custom frontend.*
 5. *Authentication based on the Bearer JWT.*
 6. *Asynchronous ORM SQLAlchemy support.*
+
+## API sections:
 * **tasks**: CRUD for the programming assignments management.
 * **topics**: CRUD for the tasks topics management.
 * **checks**: validating user input by running securely in a disposable Docker container. 
