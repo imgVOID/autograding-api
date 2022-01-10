@@ -10,4 +10,4 @@ install:
 services:
   - docker
 # Команда для запуска тестов, в моем случае они запускаются именно так
-script: pytest ./tests
+script: pytest ./tests/travis

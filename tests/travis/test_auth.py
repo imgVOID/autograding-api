@@ -1,5 +1,3 @@
-import pytest
-from httpx import AsyncClient
 from json import loads
 from fastapi.testclient import TestClient
 from os.path import abspath, dirname, join

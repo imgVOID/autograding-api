@@ -1,5 +1,5 @@
 from os.path import abspath, dirname, join
-from .mixins import TestAuthMixin
+from ..mixins import TestAuthMixin
 
 
 class TestTasksCRUDSync(TestAuthMixin):
