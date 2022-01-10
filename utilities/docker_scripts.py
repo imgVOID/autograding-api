@@ -34,8 +34,6 @@ class DockerUtils:
         user_input_path = f"./temp/{temp_name}"
         dockerfile = f'''
             FROM python:3.9-alpine
-            LABEL type=check
-            WORKDIR /
             COPY {user_input_path} ./materials/{topic_name}/input/task_{task_id}.txt /
             CMD cat task_{task_id}.txt | python -u {temp_name}
             '''
