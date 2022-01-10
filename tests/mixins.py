@@ -12,17 +12,16 @@ class TestAuthMixin:
         with open(join(dirname(abspath(__file__)), 'data', 'credentials.json'),
                   mode='r', encoding='utf-8') as f:
             example_user = loads(f.read())
-            response = client.post(f"/auth/token", data={
-                'grant_type': '',
+            data = {
                 'username': example_user['email'],
                 'password': example_user['password'],
-                'scope': '',
-                'client_id': '',
-                'client_secret': ''
-            }, headers={
+                'grant_type': '', 'scope': '', 'client_id': '', 'client_secret': ''
+            }
+            headers = {
                 'accept': 'application/json',
-                'Content-Type': 'application/x-www-form-urlencoded',
-            })
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            response = client.post(f"/auth/token", data=data, headers=headers)
 
         cls.client = client
         cls.tasks_count = None
