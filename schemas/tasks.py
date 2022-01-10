@@ -1,6 +1,6 @@
 from json import loads
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class Task(BaseModel):
@@ -11,9 +11,9 @@ class Task(BaseModel):
     id: int
     topic_id: int
     title: str
-    description: list[str]
-    input: list[str]
-    output: list[str]
+    description: List[str]
+    input: List[str]
+    output: List[str]
 
     class Config:
         schema_extra = {
@@ -35,9 +35,9 @@ class TaskCreate(BaseModel):
     to create a new task via POST requests.
     """
     title: str
-    description: list[str]
-    input: list[str]
-    output: list[str]
+    description: List[str]
+    input: List[str]
+    output: List[str]
 
     @classmethod
     def __get_validators__(cls):
@@ -67,9 +67,9 @@ class TaskUpdate(BaseModel):
     to full or partial update a task via PUT requests.
     """
     title: str
-    description: Optional[list[str]] = None
-    input: Optional[list[str]] = None
-    output: Optional[list[str]] = None
+    description: Optional[List[str]] = None
+    input: Optional[List[str]] = None
+    output: Optional[List[str]] = None
 
     @classmethod
     def __get_validators__(cls):
