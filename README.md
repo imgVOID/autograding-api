@@ -3,6 +3,7 @@
 
 [![Gitter](https://badges.gitter.im/python-autograding-api/community.svg)](https://gitter.im/python-autograding-api/community)
 [![Open Source Helpers](https://www.codetriage.com/imgvoid/autograding-api/badges/users.svg)](https://www.codetriage.com/imgvoid/python-autograding-api)
+[![Travis CI build](https://app.travis-ci.com/imgVOID/autograding-api.svg?branch=master)
 
 1. *FastAPI provides support for OpenAPI 3.0 and Swagger.*
 2. *Separate disposable Docker containers to inspect and grade potentially unsafe user input.*
