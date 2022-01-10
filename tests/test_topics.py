@@ -3,7 +3,7 @@ from httpx import AsyncClient
 from main import app
 
 
-class TestTopicsCRUD:
+class TestTopicsCRUDAsync:
     @mark.asyncio
     async def test_themes_read(self):
         async with AsyncClient(app=app, base_url="https://") as ac:
@@ -14,7 +14,7 @@ class TestTopicsCRUD:
         assert response.json()['tasks_count'] == len(response.json()["tasks"])
 
 
-class TestTopicsErrors:
+class TestTopicsErrorsAsync:
     @mark.asyncio
     async def test_themes_read_not_found(self):
         async with AsyncClient(app=app, base_url="https://") as ac:

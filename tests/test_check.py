@@ -4,7 +4,7 @@ from .mixins import TestAuthMixin
 from main import app
 
 
-class TestCheck(TestAuthMixin):
+class TestCheckAsync(TestAuthMixin):
     @mark.asyncio
     async def test_check_answer(self):
         async with AsyncClient(app=app, base_url="http://test") as ac:
@@ -29,7 +29,7 @@ class TestCheck(TestAuthMixin):
         assert answer_false == ('Hello, World!', 'Fail!', 'WRONG')
 
 
-class TestCheckErrors(TestAuthMixin):
+class TestCheckErrorsAsync(TestAuthMixin):
     @mark.asyncio
     async def test_check_not_found(self):
         async with AsyncClient(app=app, base_url="http://test") as ac:

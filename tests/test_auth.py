@@ -6,7 +6,7 @@ from os.path import abspath, dirname, join
 from main import app
 
 
-class TestTopicsCRUD:
+class TestTopicsCRUDAsync:
     def test_bearer_token(self):
         client = TestClient(app)
         # Please create new user with the "credentials.json" info
@@ -31,7 +31,7 @@ class TestTopicsCRUD:
             raise ValueError("There is no user who have already registered with this email address.") from e
 
 
-class TestTopicsErrors:
+class TestTopicsErrorsAsync:
     def test_create_user_fail(self):
         client = TestClient(app)
         data = '{\n  "email": "user@example.com",\n  "password": "string",\n  "is_root": false\n}'
