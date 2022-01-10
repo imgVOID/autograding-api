@@ -39,7 +39,8 @@ class DockerUtils:
             '''
         image_config = {
             'path': '.', 'dockerfile': dockerfile, 'forcerm': True, 'network_mode': None,
-            'tag': f'{topic_name.lower()}_{str(task_id)}_{str(id_random)}'
+            'tag': f'{topic_name.lower()}_{str(task_id)}_{str(id_random)}',
+            'labels': {"type": "check"}
         }
         try:
             image = cls.client.images.build(**image_config)[0]
