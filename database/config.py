@@ -3,7 +3,7 @@ from databases import Database
 from .models import metadata
 
 # SQLAlchemy specific code, as with any other app
-DATABASE_URL = "sqlite:///./test.db"
+DATABASE_URL = "sqlite:///D:\PycharmProjects\\autograding-api\\test.db"
 # DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
 database = Database(DATABASE_URL)
