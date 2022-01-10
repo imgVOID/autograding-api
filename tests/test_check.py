@@ -1,30 +1,11 @@
-import pytest
+from pytest import mark
 from httpx import AsyncClient
 from .mixins import TestAuthMixin
-from os import path
-from sys import path as sys_path
 from main import app
 
 
 class TestCheck(TestAuthMixin):
-    sys_path.insert(0, path.join(path.dirname(__file__), '..'))
-
-    @pytest.mark.asyncio
-    async def test_check_not_found(self):
-        async with AsyncClient(app=app, base_url="http://test") as ac:
-            response_topic = await ac.post(
-                "api/checks/999/999", files={'file': b""}, headers=self.headers
-            )
-        async with AsyncClient(app=app, base_url="http://test") as ac:
-            response_task = await ac.post(
-                "api/checks/0/999", files={'file': b""}, headers=self.headers
-            )
-        assert response_topic.status_code == 404
-        assert response_task.status_code == 404
-        assert response_topic.json() == {'detail': 'Topic not found by ID'}
-        assert response_task.json() == {'detail': 'Task not found by ID'}
-
-    @pytest.mark.asyncio
+    @mark.asyncio
     async def test_check_answer(self):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             # Please write this content: "Hello, World!'
@@ -47,7 +28,24 @@ class TestCheck(TestAuthMixin):
         assert answer_true == ('Hello, World!', 'Hello, World!', 'OK')
         assert answer_false == ('Hello, World!', 'Fail!', 'WRONG')
 
-    @pytest.mark.asyncio
+
+class TestCheckErrors(TestAuthMixin):
+    @mark.asyncio
+    async def test_check_not_found(self):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response_topic = await ac.post(
+                "api/checks/999/999", files={'file': b""}, headers=self.headers
+            )
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response_task = await ac.post(
+                "api/checks/0/999", files={'file': b""}, headers=self.headers
+            )
+        assert response_topic.status_code == 404
+        assert response_task.status_code == 404
+        assert response_topic.json() == {'detail': 'Topic not found by ID'}
+        assert response_task.json() == {'detail': 'Task not found by ID'}
+
+    @mark.asyncio
     async def test_check_answer_limit(self):
         # Please check that route's rate limit set to 2 requests per minute
         async with AsyncClient(app=app, base_url="http://test") as ac:

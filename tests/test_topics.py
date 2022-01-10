@@ -1,10 +1,10 @@
-import pytest
+from pytest import mark
 from httpx import AsyncClient
 from main import app
 
 
 class TestTopicsCRUD:
-    @pytest.mark.asyncio
+    @mark.asyncio
     async def test_themes_read(self):
         async with AsyncClient(app=app, base_url="https://") as ac:
             response = await ac.get("/api/topics/0")
@@ -15,7 +15,7 @@ class TestTopicsCRUD:
 
 
 class TestTopicsErrors:
-    @pytest.mark.asyncio
+    @mark.asyncio
     async def test_themes_read_not_found(self):
         async with AsyncClient(app=app, base_url="https://") as ac:
             response_not_found_theme = await ac.get("/api/topics/999")
