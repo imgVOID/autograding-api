@@ -9,4 +9,4 @@ install:
   - pip install -r requirements.txt
 
 # Команда для запуска тестов, в моем случае они запускаются именно так
-script: pytest /tests
+script: pytest ./tests
