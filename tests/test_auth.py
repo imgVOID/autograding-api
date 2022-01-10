@@ -40,6 +40,7 @@ class TestTopicsErrorsAsync:
             'accept': 'application/json',
             'Content-Type': 'application/json',
         }
+        client.post(f"/auth/users/", data=data, headers=headers)
         response = client.post(f"/auth/users/", data=data, headers=headers)
         assert response.status_code == 400
 
