@@ -30,7 +30,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 
 @router_users.post("/", response_model=User, summary="Create new user")
-async def create_user(user: UserCreate, current_user: User = Depends(get_current_active_user)):
+async def create_user(user: UserCreate):
     query = "SELECT * FROM users WHERE email = :email"
     if await database.fetch_one(query=query, values={"email": user.email}):
         raise HTTPException(status_code=400, detail="Email already registered")

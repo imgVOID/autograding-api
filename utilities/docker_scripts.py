@@ -1,10 +1,10 @@
 """
 The `docker_scripts` module stores utilities for creating and maintaining disposable containers. 
 """
-from os import remove
-from os.path import isfile
 from typing import Tuple, Optional
 from subprocess import Popen, PIPE
+from asyncio import create_subprocess_shell
+from asyncio.subprocess import PIPE
 from random import randint
 from docker import from_env
 from docker.api import build
@@ -24,7 +24,7 @@ class DockerUtils:
         raise DockerException("Error accessing the Docker API. Is Docker running?") from e
 
     @classmethod
-    async def _image_build(
+    def _image_build(
             cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str, id_random
     ) -> Tuple[Image, str] or None:
         """
@@ -56,7 +56,7 @@ class DockerUtils:
             cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
     ) -> str:
         """
-        `DockerUtils._docker_container_run` private class method requires a Docker-image
+        `DockerUtils._container_run_sdk` private class method requires a Docker-image
         and returns the result of executing user input in the container.
         """
         answer = ""
@@ -87,7 +87,7 @@ class DockerUtils:
             cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
     ) -> str:
         """
-        `DockerUtils._docker_container_run` private class method requires a Docker-image
+        `DockerUtils._container_run_process` private class method requires a Docker-image
         and returns the result of executing user input in the container.
         """
         cmd = f'docker run --rm --read-only --name task_{topic_name.lower()}_{task_id}_{id_random} {image.id}'
@@ -107,11 +107,34 @@ class DockerUtils:
             return answer.decode("utf-8").strip()
 
     @classmethod
+    async def _container_run_process_async(
+            cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
+    ) -> str:
+        """
+        `DockerUtils._container_run_process_async` private class method requires a Docker-image
+        and returns the result of executing user input in the container.
+        """
+        cmd = f'docker run --rm --read-only --name task_{topic_name.lower()}_{task_id}_{id_random} {image.id}'
+        try:
+            container = await create_subprocess_shell(cmd, stdout=PIPE, stderr=PIPE)
+        except ContainerError as e:
+            raise DockerException("Failed to run container:") from e
+        except ImageNotFound as e:
+            raise DockerException("Failed to find image:") from e
+        except NotFound as e:
+            raise DockerException("File not found in the container:") from e
+        except APIError as e:
+            raise DockerException("Unhandled Docker API error:") from e
+        else:
+            answer, stderr = await container.communicate()
+            return answer.decode("utf-8").strip()
+
+    @classmethod
     async def _container_run_whale(
             cls: 'DockerUtils', image: Image, topic_name: str, task_id: int, id_random: int
     ) -> str:
         """
-        `DockerUtils._docker_container_run` private class method requires a Docker-image
+        `DockerUtils._container_run` private class method requires a Docker-image
         and returns the result of executing user input in the container.
         """
         config = {
@@ -132,15 +155,19 @@ class DockerUtils:
             cls: 'DockerUtils', topic_name: str, task_id: int, temp_name: str
     ) -> Optional[Tuple[str, int]]:
         """
-        `DockerUtils.docker_check_user_answer` class method is a public interface method,
+        `DockerUtils._check_user_answer` class method is a public interface method,
         returns the result of executing user input in the Docker container.
         """
         id_random = randint(0, 100)
-        image, user_input_path = await cls._image_build(
+        image, user_input_path = cls._image_build(
             topic_name, task_id, temp_name, id_random
         )
+
+        return (
+            await cls._container_run_process_async(image, topic_name, task_id, id_random), id_random
+        ) if image else None
+        # return (await cls._container_run_process(image, topic_name, task_id, id_random), id_random) if image else None
         # return (await cls._container_run_sdk(image, topic_name, task_id, id_random), id_random) if image else None
-        return (await cls._container_run_process(image, topic_name, task_id, id_random), id_random) if image else None
         # return (await cls._container_run_whale(image, topic_name, task_id, id_random), id_random) if image else None
 
     @classmethod
